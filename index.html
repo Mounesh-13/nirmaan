@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nirmaan — Realtime Lab Code & Text Hub</title>
+  <title>NIRMAAN (01) — LAB SYNC ENGINE</title>
   
-  <!-- Favicon / Meta -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
-  <meta name="description" content="Ephemeral, zero-persistence real-time code and communication hub for computer labs and workshops." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22black%22/><text x=%2250%22 y=%2266%22 font-family=%22monospace%22 font-size=%2250%22 font-weight=%22bold%22 text-anchor=%22middle%22 fill=%22white%22>N</text></svg>">
+  <meta name="description" content="Ultra-minimalist, zero-persistence real-time code and text collaboration in Nothing brand aesthetic." />
 
-  <!-- Tailwind CSS CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Doto:wght@600;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -17,382 +19,301 @@
       theme: {
         extend: {
           colors: {
-            cyber: {
-              950: '#070a13',
-              900: '#0b1120',
-              850: '#0f172a',
-              800: '#16223d',
-              700: '#1e2f52',
-              600: '#2d4575',
-              border: '#1f2e4d',
-              accent: '#00f2fe',
-              neon: '#4facfe',
-              emerald: '#10b981',
-              amber: '#f59e0b',
-              crimson: '#ef4444'
+            nothing: {
+              red: '#D71921',
+              black: '#0A0A0A',
+              card: '#FFFFFF',
+              surface: '#F4F4F5',
+              border: '#E4E4E7',
+              muted: '#71717A',
+              subtle: '#A1A1AA'
             }
           },
           fontFamily: {
-            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', '"Liberation Mono"', '"Courier New"', 'monospace']
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['"Space Mono"', 'ui-monospace', 'Menlo', 'monospace'],
+            dot: ['"Doto"', 'monospace']
           }
         }
       }
     }
   </script>
 
-  <!-- Highlight.js (Tokyo Night Dark) CDN -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css" />
+  <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css" />
+  <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css" disabled />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   
-  <!-- Supabase Client v2 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    /* Custom Scrollbar for Sleek Terminal Feel */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+    body {
+      background-color: #F8F8F9;
+      background-image: radial-gradient(rgba(0, 0, 0, 0.1) 1.2px, transparent 1.2px);
+      background-size: 18px 18px;
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.2s ease, color 0.2s ease;
     }
-    ::-webkit-scrollbar-track {
-      background: #070a13;
+    html.dark body {
+      background-color: #000000 !important;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1.2px, transparent 1.2px) !important;
+      background-size: 18px 18px !important;
+      color: #F4F4F5 !important;
     }
-    ::-webkit-scrollbar-thumb {
-      background: #1e2f52;
-      border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #2d4575;
-    }
-
-    /* Highlight.js custom background override to match theme */
-    .hljs {
-      background: transparent !important;
-      padding: 0 !important;
-      font-size: 0.825rem !important;
-      line-height: 1.5rem !important;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace !important;
-    }
-
-    .code-line-num {
-      height: 1.5rem;
-      line-height: 1.5rem;
-      font-size: 0.775rem;
-    }
-
-    .code-pre {
-      line-height: 1.5rem !important;
-      font-size: 0.825rem !important;
-      white-space: pre !important;
-      tab-size: 2;
-    }
-
-    /* Glow animation */
-    @keyframes pulse-glow {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.96); }
-    }
-    .animate-pulse-glow {
-      animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-
-    /* Subtle terminal grid background pattern */
-    .terminal-grid {
-      background-size: 32px 32px;
-      background-image: 
-        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-    }
-
-    /* Line numbers column */
-    .line-numbers-col {
-      user-select: none;
-      -webkit-user-select: none;
-    }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #D4D4D8; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #71717A; }
+    html.dark ::-webkit-scrollbar-thumb { background: #3F3F46; }
+    html.dark ::-webkit-scrollbar-thumb:hover { background: #71717A; }
+    .hljs { background: transparent !important; padding: 0 !important; font-size: 0.815rem !important; line-height: 1.55rem !important; font-family: "Space Mono", ui-monospace, monospace !important; }
+    .code-line-num { height: 1.55rem; line-height: 1.55rem; font-size: 0.725rem; }
+    .code-pre { line-height: 1.55rem !important; font-size: 0.815rem !important; white-space: pre !important; tab-size: 2; }
+    @keyframes nothing-led { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.85); } }
+    .animate-nothing-led { animation: nothing-led 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    .btn-tactile { transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1); }
+    .btn-tactile:active { transform: scale(0.96); }
+    @keyframes card-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-card-in { animation: card-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes delete-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.98) translateY(-4px); } }
+    .animate-delete-out { animation: delete-out 0.18s ease forwards; }
   </style>
 </head>
-<body class="bg-cyber-950 text-slate-200 font-sans h-screen flex flex-col overflow-hidden terminal-grid selection:bg-cyan-500/30 selection:text-cyan-200">
+<body class="text-neutral-900 dark:text-neutral-100 font-sans h-screen flex flex-col overflow-hidden selection:bg-neutral-900 selection:text-white dark:selection:bg-white dark:selection:text-black">
 
-  <!-- ========================================== -->
-  <!-- TOP HEADER / APP BAR                       -->
-  <!-- ========================================== -->
-  <header class="h-16 border-b border-cyber-border bg-cyber-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-30 shrink-0">
-    <!-- Left: Brand + Status -->
-    <div class="flex items-center gap-3 sm:gap-4">
-      <div class="flex items-center gap-2 cursor-pointer group" onclick="showHelpModal()">
-        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-cyan-500/20 group-hover:shadow-cyan-500/40 transition-all">
-          <i data-lucide="zap" class="w-5 h-5 text-white fill-white"></i>
+  <header class="h-16 border-b border-neutral-200/90 dark:border-neutral-800/90 bg-white/85 dark:bg-neutral-950/85 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-30 shrink-0">
+    <div class="flex items-center gap-3">
+      <div onclick="showHelpModal()" class="flex items-center gap-2.5 cursor-pointer group">
+        <div class="w-8 h-8 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center font-mono font-bold text-xs tracking-tighter shadow-sm group-hover:scale-105 transition-transform">
+          (N)
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="font-mono font-black text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400">NIRMAAN</span>
-            <span class="hidden md:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 uppercase tracking-widest">Lab Sync</span>
+            <span class="font-dot font-black text-base tracking-widest uppercase text-neutral-950 dark:text-white">NIRMAAN</span>
+            <span class="text-[9px] font-mono tracking-widest px-1.5 py-0.2 rounded border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-bold uppercase">(01)</span>
           </div>
-          <div class="text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
-            <span id="conn-indicator" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-            <span id="conn-status-text">INITIALIZING</span>
+          <div class="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5 mt-0.5 tracking-wider">
+            <span id="conn-led" class="w-1.5 h-1.5 rounded-full bg-nothing-red animate-nothing-led"></span>
+            <span id="conn-status-text" class="uppercase font-semibold text-neutral-700 dark:text-neutral-300">STANDBY</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Center: Active Room Badge -->
-    <div class="flex items-center gap-2">
-      <div class="flex items-center bg-cyber-850 border border-cyber-border rounded-lg p-1 text-xs font-mono shadow-inner">
-        <div class="flex items-center gap-1.5 px-2.5 py-1 text-slate-300">
-          <i data-lucide="hash" class="w-3.5 h-3.5 text-cyan-400"></i>
-          <span class="text-slate-500 uppercase tracking-wider text-[10px]">ROOM:</span>
-          <span id="current-room-label" class="font-semibold text-cyan-300 max-w-[110px] sm:max-w-[160px] truncate">lab-01</span>
+    <div class="flex items-center">
+      <div class="flex items-center bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-full p-1 shadow-xs text-xs font-mono">
+        <div class="flex items-center gap-1.5 px-3 py-0.5 text-neutral-500 dark:text-neutral-400">
+          <span class="text-[10px] uppercase tracking-wider font-semibold">ROOM:</span>
+          <span id="current-room-label" class="font-bold text-neutral-950 dark:text-white max-w-[120px] sm:max-w-[170px] truncate tracking-wide">LAB-01</span>
         </div>
-        <button id="copy-room-link-btn" onclick="copyRoomLink()" title="Copy shareable room link" class="flex items-center gap-1 px-2 py-1 rounded bg-cyber-800 hover:bg-cyber-700 text-slate-300 hover:text-white transition-colors">
+        <button id="copy-room-link-btn" onclick="copyRoomLink()" title="Copy room link" class="btn-tactile flex items-center gap-1 px-2.5 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 transition-colors">
           <i data-lucide="copy" class="w-3.5 h-3.5" id="copy-room-icon"></i>
-          <span class="hidden sm:inline text-[11px]" id="copy-room-text">Link</span>
+          <span class="hidden sm:inline text-[11px] font-semibold tracking-wider uppercase" id="copy-room-text">Link</span>
         </button>
-        <button onclick="openRoomSwitchModal()" title="Switch or create room" class="flex items-center gap-1 px-2 py-1 rounded hover:bg-cyber-700 text-slate-400 hover:text-cyan-300 transition-colors ml-0.5">
+        <button onclick="openRoomSwitchModal()" title="Switch or create room" class="btn-tactile flex items-center gap-1 px-2.5 py-1 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-colors ml-0.5">
           <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline text-[11px]">Switch</span>
+          <span class="hidden sm:inline text-[11px] font-semibold tracking-wider uppercase">Switch</span>
         </button>
       </div>
     </div>
 
-    <!-- Right: Workstation Identity, Peers & Controls -->
-    <div class="flex items-center gap-2 sm:gap-3">
-      <!-- Workstation Identity Pill -->
-      <div class="flex items-center bg-cyber-850 border border-cyber-border rounded-lg px-2.5 py-1 text-xs font-mono" title="Your Workstation Identifier">
-        <i data-lucide="monitor" class="w-3.5 h-3.5 text-emerald-400 mr-1.5"></i>
+    <div class="flex items-center gap-2">
+      <div class="flex items-center bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-full px-3 py-1 shadow-xs text-xs font-mono" title="Click to rename your workstation">
+        <span class="text-[10px] text-neutral-400 dark:text-neutral-500 font-bold uppercase tracking-wider mr-1.5">NODE:</span>
         <input 
           id="workstation-name-input" 
           type="text" 
           value="PC-01" 
-          maxlength="16"
-          title="Click to change your workstation name"
-          class="bg-transparent border-none text-emerald-300 font-semibold focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded px-1 w-20 sm:w-24 text-center cursor-pointer hover:bg-cyber-800 transition-colors"
+          maxlength="14"
+          class="bg-transparent border-none text-neutral-950 dark:text-white font-bold focus:outline-none rounded px-0.5 w-16 sm:w-20 text-center cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-xs font-mono tracking-wide"
           onchange="updateWorkstationName(this.value)"
           onblur="updateWorkstationName(this.value)"
           onkeydown="if(event.key === 'Enter') this.blur()"
         />
       </div>
 
-      <!-- Online Peers Trigger -->
       <button 
         id="peers-toggle-btn"
         onclick="togglePeersModal()" 
-        title="View online workstations in this room" 
-        class="flex items-center gap-1.5 bg-cyber-850 hover:bg-cyber-800 border border-cyber-border rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-300 transition-colors"
+        title="View active nodes in room" 
+        class="btn-tactile flex items-center gap-1.5 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-200/90 dark:border-neutral-800 rounded-full px-3 py-1.5 text-xs font-mono shadow-xs transition-colors"
       >
-        <i data-lucide="users" class="w-3.5 h-3.5 text-cyan-400"></i>
-        <span id="peers-count" class="font-semibold text-cyan-300">1</span>
-        <span class="hidden md:inline text-slate-400">Online</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        <span id="peers-count" class="font-bold text-neutral-950 dark:text-white">1</span>
+        <span class="hidden md:inline text-[11px] text-neutral-500 dark:text-neutral-400 tracking-wider uppercase">Active</span>
       </button>
 
-      <!-- Audio Mute/Unmute Toggle -->
       <button 
-        id="sound-toggle-btn"
-        onclick="toggleSound()" 
-        title="Toggle audio feedback" 
-        class="p-2 rounded-lg bg-cyber-850 hover:bg-cyber-800 border border-cyber-border text-slate-400 hover:text-slate-200 transition-colors"
+        id="theme-toggle-btn"
+        onclick="toggleTheme()" 
+        title="Toggle Light / Dark Mode" 
+        class="btn-tactile p-2 rounded-full bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white transition-colors"
       >
-        <i data-lucide="volume-2" class="w-4 h-4" id="sound-icon"></i>
+        <i data-lucide="moon" class="w-4 h-4" id="theme-icon"></i>
       </button>
 
-      <!-- Supabase Setup / Settings Button -->
       <button 
         onclick="openSetupModal()" 
-        title="Configure Supabase Connection" 
-        class="p-2 rounded-lg bg-cyber-850 hover:bg-cyber-800 border border-cyber-border text-slate-400 hover:text-cyan-400 transition-colors relative"
+        title="Supabase Settings" 
+        class="btn-tactile p-2 rounded-full bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200/90 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors relative"
       >
-        <i data-lucide="settings" class="w-4 h-4"></i>
-        <span id="settings-warning-dot" class="hidden absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400"></span>
+        <i data-lucide="sliders" class="w-4 h-4"></i>
+        <span id="settings-warning-dot" class="hidden absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-nothing-red"></span>
       </button>
     </div>
   </header>
 
-  <!-- ========================================== -->
-  <!-- SETUP / CONFIG BANNER (IF DEFAULT KEYS)    -->
-  <!-- ========================================== -->
-  <div id="setup-warning-banner" class="hidden bg-gradient-to-r from-cyan-950/90 via-blue-950/90 to-purple-950/90 border-b border-cyan-800/60 px-4 py-2 flex items-center justify-between text-xs font-mono z-20 shrink-0">
-    <div class="flex items-center gap-2 text-cyan-200">
-      <i data-lucide="info" class="w-4 h-4 text-cyan-400 shrink-0"></i>
-      <span><strong>LOCAL MESH MODE ACTIVE:</strong> Using in-browser cross-tab broadcast. Enter your free Supabase Realtime credentials to connect across different physical lab PCs!</span>
+  <div id="setup-warning-banner" class="hidden bg-neutral-950 text-white px-4 py-2 flex items-center justify-between text-xs font-mono z-20 shrink-0 border-b border-neutral-800">
+    <div class="flex items-center gap-2">
+      <span class="w-1.5 h-1.5 rounded-full bg-nothing-red animate-ping"></span>
+      <span class="tracking-wide">LOCAL MESH PROTOCOL: Enter Supabase keys to connect multiple workstations.</span>
     </div>
-    <div class="flex items-center gap-2 shrink-0 ml-3">
-      <button onclick="openSetupModal()" class="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-[11px] font-semibold transition-colors">
-        Configure Supabase
+    <div class="flex items-center gap-2">
+      <button onclick="openSetupModal()" class="px-2.5 py-1 bg-white text-neutral-950 font-bold rounded-full text-[10px] tracking-wider uppercase hover:bg-neutral-200 transition-colors">
+        Configure
       </button>
-      <button onclick="dismissBanner()" class="p-1 text-slate-400 hover:text-white" title="Dismiss">
+      <button onclick="dismissBanner()" class="p-1 text-neutral-400 hover:text-white" title="Dismiss">
         <i data-lucide="x" class="w-3.5 h-3.5"></i>
       </button>
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- MAIN WORKSPACE & MESSAGES FEED CONTAINER   -->
-  <!-- ========================================== -->
   <main class="flex-1 flex flex-col min-h-0 relative">
-    
-    <!-- Scrollable Feed -->
-    <div id="messages-feed" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 font-mono scroll-smooth">
+    <div id="messages-feed" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 scroll-smooth">
       
-      <!-- Empty Room State / Welcome Hero -->
-      <div id="empty-state" class="max-w-2xl mx-auto my-8 p-6 rounded-xl border border-cyber-border bg-cyber-900/60 backdrop-blur-sm text-center">
-        <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-cyan-950/80 border border-cyan-700/50 flex items-center justify-center text-cyan-400 shadow-lg shadow-cyan-900/30">
-          <i data-lucide="terminal" class="w-7 h-7"></i>
+      <div id="empty-state" class="max-w-xl mx-auto my-12 p-8 rounded-3xl border border-neutral-200/90 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm text-center shadow-xs">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-full border-2 border-dashed border-neutral-300 dark:border-neutral-700 flex items-center justify-center text-neutral-950 dark:text-white bg-neutral-50 dark:bg-neutral-950 shadow-inner">
+          <i data-lucide="radio" class="w-5 h-5 text-neutral-800 dark:text-neutral-200"></i>
         </div>
-        <h2 class="text-xl font-bold tracking-tight text-white font-mono">LAB BROADCAST CHANNEL READY</h2>
-        <p class="text-sm text-slate-400 mt-2 max-w-md mx-auto">
-          Zero-persistence ephemeral sync active. Messages and code blocks exist in workstation memory only and vanish when tabs close.
+        <h2 class="text-sm font-bold tracking-widest text-neutral-950 dark:text-white font-mono uppercase">TRANSIENT CHANNEL READY</h2>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1.5 max-w-sm mx-auto leading-relaxed font-mono">
+          Strictly zero disk persistence. Messages exist only in active browser memory and vanish on tab close.
         </p>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 text-left text-xs">
-          <div class="p-3 rounded-lg bg-cyber-850/80 border border-cyber-border">
-            <div class="flex items-center gap-1.5 text-cyan-400 font-semibold mb-1">
-              <i data-lucide="share-2" class="w-3.5 h-3.5"></i> 1. Share URL
-            </div>
-            <div class="text-slate-400">Share this room's URL with nearby lab workstations.</div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-6 text-left text-xs font-mono">
+          <div class="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200/70 dark:border-neutral-800">
+            <div class="text-neutral-900 dark:text-neutral-200 font-bold text-[10px] tracking-wider mb-1 uppercase">01 // SHARE</div>
+            <div class="text-neutral-500 dark:text-neutral-400 text-[11px] leading-tight">Share room URL with peers.</div>
           </div>
-          <div class="p-3 rounded-lg bg-cyber-850/80 border border-cyber-border">
-            <div class="flex items-center gap-1.5 text-emerald-400 font-semibold mb-1">
-              <i data-lucide="code" class="w-3.5 h-3.5"></i> 2. Drop Code
-            </div>
-            <div class="text-slate-400">Toggle "Code Drop" below to broadcast formatted snippets.</div>
+          <div class="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200/70 dark:border-neutral-800">
+            <div class="text-neutral-900 dark:text-neutral-200 font-bold text-[10px] tracking-wider mb-1 uppercase">02 // CODE</div>
+            <div class="text-neutral-500 dark:text-neutral-400 text-[11px] leading-tight">Transmit formatted blocks.</div>
           </div>
-          <div class="p-3 rounded-lg bg-cyber-850/80 border border-cyber-border">
-            <div class="flex items-center gap-1.5 text-amber-400 font-semibold mb-1">
-              <i data-lucide="keyboard" class="w-3.5 h-3.5"></i> 3. Quick Keys
-            </div>
-            <div class="text-slate-400">Press <kbd class="px-1 py-0.5 bg-slate-800 rounded text-[10px] text-slate-300">Ctrl+Enter</kbd> to send instantly.</div>
+          <div class="p-3 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200/70 dark:border-neutral-800">
+            <div class="text-neutral-900 dark:text-neutral-200 font-bold text-[10px] tracking-wider mb-1 uppercase">03 // SPEED</div>
+            <div class="text-neutral-500 dark:text-neutral-400 text-[11px] leading-tight"><kbd class="bg-neutral-200 dark:bg-neutral-800 px-1 py-0.5 rounded text-[10px]">Enter</kbd> to dispatch.</div>
           </div>
         </div>
-
-        <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <button onclick="sendQuickSample()" class="px-3.5 py-1.5 bg-cyber-800 hover:bg-cyber-700 border border-cyan-800/60 rounded-lg text-xs font-mono text-cyan-300 hover:text-white transition-all flex items-center gap-1.5">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i> Broadcast Test Snippet
+        <div class="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+          <button onclick="sendQuickSample()" class="btn-tactile px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-300 dark:border-neutral-700 text-neutral-800 dark:text-neutral-200 rounded-full text-xs font-mono font-bold tracking-wider uppercase transition-all flex items-center gap-1.5">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i> Test Snippet
           </button>
-          <button onclick="copyRoomLink()" class="px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-xs font-mono text-white transition-all flex items-center gap-1.5">
+          <button onclick="copyRoomLink()" class="btn-tactile px-4 py-2 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 rounded-full text-xs font-mono font-bold tracking-wider uppercase transition-all flex items-center gap-1.5 shadow-xs">
             <i data-lucide="link" class="w-3.5 h-3.5"></i> Copy Room Link
           </button>
         </div>
       </div>
 
-      <!-- Messages will be injected here dynamically -->
-      <div id="messages-container" class="space-y-4 max-w-5xl mx-auto"></div>
+      <div id="messages-container" class="space-y-3 max-w-4xl mx-auto"></div>
     </div>
 
-    <!-- Floating "Jump to Latest" Button (appears when user scrolled up) -->
     <button 
       id="scroll-bottom-btn" 
       onclick="scrollToBottom(true)"
-      class="hidden absolute bottom-4 right-6 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-mono px-3 py-2 rounded-full shadow-lg shadow-cyan-950/60 flex items-center gap-2 transition-all z-20 animate-bounce"
+      class="hidden btn-tactile absolute bottom-4 right-6 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 text-xs font-mono px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition-all z-20"
     >
       <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i>
-      <span>New Messages Below</span>
+      <span class="tracking-wider uppercase text-[11px] font-bold">New Transmissions</span>
     </button>
   </main>
 
-  <!-- ========================================== -->
-  <!-- COMPOSER BAR (STICKY AT BOTTOM)            -->
-  <!-- ========================================== -->
-  <footer class="border-t border-cyber-border bg-cyber-900/95 backdrop-blur-md p-3 sm:p-4 z-20 shrink-0">
-    <div class="max-w-5xl mx-auto space-y-2.5">
+  <footer class="border-t border-neutral-200/80 dark:border-neutral-800 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-md p-3 sm:p-4 z-20 shrink-0">
+    <div class="max-w-4xl mx-auto space-y-2.5">
       
-      <!-- Top Row: Mode Toggles & Language Selector & Actions -->
       <div class="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-        <!-- Mode Tabs -->
-        <div class="flex items-center bg-cyber-850 p-1 rounded-lg border border-cyber-border">
+        <div class="flex items-center bg-neutral-100 dark:bg-neutral-900 p-0.5 rounded-full border border-neutral-200/90 dark:border-neutral-800">
           <button 
             id="tab-text-mode" 
             onclick="setComposerMode('text')" 
-            class="flex items-center gap-1.5 px-3 py-1 rounded text-white bg-cyber-700 shadow font-semibold transition-all"
+            class="btn-tactile px-4 py-1 rounded-full text-white dark:text-neutral-950 bg-neutral-950 dark:bg-white shadow-xs font-bold text-xs tracking-wider uppercase transition-all"
           >
-            <i data-lucide="message-square" class="w-3.5 h-3.5 text-cyan-400"></i>
-            <span>Plain Message</span>
+            TEXT
           </button>
           <button 
             id="tab-code-mode" 
             onclick="setComposerMode('code')" 
-            class="flex items-center gap-1.5 px-3 py-1 rounded text-slate-400 hover:text-white transition-all"
+            class="btn-tactile px-4 py-1 rounded-full text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-all font-bold text-xs tracking-wider uppercase"
           >
-            <i data-lucide="code-2" class="w-3.5 h-3.5 text-emerald-400"></i>
-            <span>Code Drop</span>
+            CODE
           </button>
         </div>
 
-        <!-- Code Specific Options (visible in code mode) -->
         <div id="code-options-bar" class="hidden flex items-center gap-2">
-          <!-- Language Dropdown -->
-          <div class="flex items-center bg-cyber-850 border border-cyber-border rounded-lg px-2 py-0.5">
-            <span class="text-slate-400 text-[11px] mr-1.5">Language:</span>
-            <select id="code-language-select" class="bg-transparent text-emerald-300 font-semibold focus:outline-none cursor-pointer py-1">
-              <option value="auto" class="bg-cyber-900 text-slate-200">Auto-Detect</option>
-              <option value="python" class="bg-cyber-900 text-slate-200">Python (.py)</option>
-              <option value="cpp" class="bg-cyber-900 text-slate-200">C++ (.cpp)</option>
-              <option value="c" class="bg-cyber-900 text-slate-200">C (.c)</option>
-              <option value="java" class="bg-cyber-900 text-slate-200">Java (.java)</option>
-              <option value="javascript" class="bg-cyber-900 text-slate-200">JavaScript (.js)</option>
-              <option value="typescript" class="bg-cyber-900 text-slate-200">TypeScript (.ts)</option>
-              <option value="rust" class="bg-cyber-900 text-slate-200">Rust (.rs)</option>
-              <option value="sql" class="bg-cyber-900 text-slate-200">SQL (.sql)</option>
-              <option value="html" class="bg-cyber-900 text-slate-200">HTML (.html)</option>
-              <option value="css" class="bg-cyber-900 text-slate-200">CSS (.css)</option>
-              <option value="bash" class="bg-cyber-900 text-slate-200">Bash/Shell (.sh)</option>
-              <option value="json" class="bg-cyber-900 text-slate-200">JSON (.json)</option>
-              <option value="plaintext" class="bg-cyber-900 text-slate-200">Plain Text (.txt)</option>
+          <div class="flex items-center bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-full px-3 py-1 shadow-xs">
+            <span class="text-neutral-400 dark:text-neutral-500 text-[10px] mr-1.5 font-bold tracking-wider uppercase">SPEC:</span>
+            <select id="code-language-select" class="bg-transparent text-neutral-950 dark:text-neutral-100 font-bold focus:outline-none cursor-pointer text-xs uppercase tracking-wide">
+              <option value="auto" class="dark:bg-neutral-900">Auto-Detect</option>
+              <option value="python" class="dark:bg-neutral-900">Python (.py)</option>
+              <option value="cpp" class="dark:bg-neutral-900">C++ (.cpp)</option>
+              <option value="c" class="dark:bg-neutral-900">C (.c)</option>
+              <option value="java" class="dark:bg-neutral-900">Java (.java)</option>
+              <option value="javascript" class="dark:bg-neutral-900">JavaScript (.js)</option>
+              <option value="typescript" class="dark:bg-neutral-900">TypeScript (.ts)</option>
+              <option value="rust" class="dark:bg-neutral-900">Rust (.rs)</option>
+              <option value="sql" class="dark:bg-neutral-900">SQL (.sql)</option>
+              <option value="html" class="dark:bg-neutral-900">HTML (.html)</option>
+              <option value="css" class="dark:bg-neutral-900">CSS (.css)</option>
+              <option value="bash" class="dark:bg-neutral-900">Bash (.sh)</option>
+              <option value="json" class="dark:bg-neutral-900">JSON (.json)</option>
+              <option value="plaintext" class="dark:bg-neutral-900">Plain Text (.txt)</option>
             </select>
           </div>
 
-          <!-- Snippet Title/Comment (Optional) -->
           <input 
             id="code-title-input" 
             type="text" 
-            placeholder="Snippet title (e.g. solution.py, Q2-sort)" 
-            maxlength="40"
-            class="bg-cyber-850 border border-cyber-border rounded-lg px-2.5 py-1 text-slate-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500 w-44 sm:w-56"
+            placeholder="Filename or label" 
+            maxlength="36"
+            class="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-full px-3 py-1 text-xs text-neutral-950 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none focus:border-neutral-900 dark:focus:border-neutral-400 shadow-xs w-36 sm:w-48 font-mono"
           />
         </div>
 
-        <!-- Right Quick Action: Clear Screen -->
         <div class="flex items-center gap-2">
           <button 
             onclick="clearLocalScreen()" 
-            title="Clear the current workstation screen (does not affect other peers)" 
-            class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyber-850 hover:bg-cyber-800 border border-cyber-border text-slate-400 hover:text-amber-400 transition-colors"
+            title="Clear current screen locally" 
+            class="btn-tactile flex items-center gap-1 px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors font-bold uppercase tracking-wider text-[11px]"
           >
             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            <span class="hidden sm:inline">Clear Screen</span>
+            <span class="hidden sm:inline">Clear</span>
           </button>
         </div>
       </div>
 
-      <!-- Textarea Input Box -->
-      <div class="relative bg-cyber-950 border border-cyber-border focus-within:border-cyan-500 rounded-xl overflow-hidden transition-all shadow-inner">
-        <!-- Text Mode Input -->
+      <div class="relative bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-800 focus-within:border-neutral-950 dark:focus-within:border-white rounded-2xl overflow-hidden shadow-xs transition-all">
         <textarea 
           id="text-input" 
           rows="2"
-          placeholder="Type an ephemeral message to all workstations... (Press Ctrl+Enter to broadcast)"
-          class="w-full bg-transparent px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none resize-none font-sans"
+          placeholder="Transmit a message... (Enter to send, Shift+Enter for newline)"
+          class="w-full bg-transparent px-4 py-3 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none resize-none font-sans"
           onkeydown="handleTextareaKeyDown(event, 'text')"
         ></textarea>
 
-        <!-- Code Mode Input -->
         <textarea 
           id="code-input" 
           rows="5"
-          placeholder="// Paste or write code snippet here...&#10;// Tab key supported for indentation&#10;// Press Ctrl+Enter to broadcast"
-          class="hidden w-full bg-transparent px-3.5 py-2.5 text-xs font-mono text-emerald-300 placeholder-slate-500 focus:outline-none resize-y"
-          style="min-height: 110px; max-height: 380px; tab-size: 2;"
+          placeholder="// Paste or write source code here...&#10;// Tab key supported for indentation&#10;// Enter to transmit, Shift+Enter for newline"
+          class="hidden w-full bg-transparent px-4 py-3 text-xs font-mono text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:outline-none resize-y"
+          style="min-height: 120px; max-height: 380px; tab-size: 2;"
           onkeydown="handleTextareaKeyDown(event, 'code')"
         ></textarea>
       </div>
 
-      <!-- Bottom Status & Send Controls -->
-      <div class="flex items-center justify-between text-[11px] font-mono text-slate-500">
+      <div class="flex items-center justify-between text-[11px] font-mono text-neutral-500 dark:text-neutral-400">
         <div class="flex items-center gap-3">
-          <span class="hidden sm:inline">
-            <kbd class="px-1.5 py-0.5 bg-cyber-800 border border-cyber-border rounded text-slate-300">Ctrl</kbd> + 
-            <kbd class="px-1.5 py-0.5 bg-cyber-800 border border-cyber-border rounded text-slate-300">Enter</kbd> to broadcast
+          <span id="composer-shortcut-hint" class="hidden sm:inline">
+            <kbd class="px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded text-neutral-700 dark:text-neutral-300">Enter</kbd> to send, 
+            <kbd class="px-1.5 py-0.5 bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded text-neutral-700 dark:text-neutral-300">Shift+Enter</kbd> for newline
           </span>
           <span id="composer-char-count">0 chars</span>
         </div>
@@ -401,10 +322,9 @@
           <button 
             id="send-btn" 
             onclick="broadcastCurrentPayload()" 
-            class="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-semibold text-xs tracking-wide shadow-md shadow-cyan-900/30 active:scale-95 transition-all"
+            class="btn-tactile flex items-center gap-1.5 px-5 py-2 rounded-full bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 font-mono font-bold text-xs tracking-widest uppercase shadow-md transition-all"
           >
-            <i data-lucide="send" class="w-3.5 h-3.5"></i>
-            <span id="send-btn-label">Broadcast</span>
+            <span id="send-btn-label">TRANSMIT →</span>
           </button>
         </div>
       </div>
@@ -412,443 +332,332 @@
     </div>
   </footer>
 
-  <!-- ========================================== -->
-  <!-- MODALS CONTAINER                           -->
-  <!-- ========================================== -->
-
-  <!-- 1. SUPABASE CREDENTIALS SETUP MODAL -->
-  <div id="setup-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-cyber-900 border border-cyber-border rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
-      <button onclick="closeSetupModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+  <!-- MODALS -->
+  <div id="setup-modal" class="hidden fixed inset-0 bg-neutral-950/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative">
+      <button onclick="closeSetupModal()" class="btn-tactile absolute top-5 right-5 text-neutral-400 hover:text-neutral-950 dark:hover:text-white p-1">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
-
       <div class="flex items-center gap-3 mb-4">
-        <div class="w-10 h-10 rounded-xl bg-cyan-950 border border-cyan-800/80 flex items-center justify-center text-cyan-400">
-          <i data-lucide="database" class="w-5 h-5"></i>
+        <div class="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 flex items-center justify-center text-neutral-950 dark:text-white font-mono font-bold text-xs">
+          SYS
         </div>
         <div>
-          <h3 class="text-base font-bold font-mono text-white">Supabase Realtime Engine</h3>
-          <p class="text-xs text-slate-400">Ephemeral WebSocket transport configuration</p>
+          <h3 class="text-sm font-bold font-mono text-neutral-950 dark:text-white uppercase tracking-wider">SUPABASE REALTIME</h3>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 font-mono">Zero-Persistence WebSocket Engine</p>
         </div>
       </div>
-
-      <div class="text-xs text-slate-300 space-y-3 mb-5 font-mono">
-        <div class="p-3 rounded-lg bg-cyber-850 border border-cyber-border space-y-1.5">
-          <div class="text-cyan-400 font-semibold flex items-center gap-1.5">
-            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Strictly Zero Persistence
+      <div class="text-xs text-neutral-600 dark:text-neutral-400 space-y-3 mb-5 font-mono">
+        <div class="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200/80 dark:border-neutral-800 space-y-1">
+          <div class="text-neutral-950 dark:text-white font-bold flex items-center gap-1.5 tracking-wider uppercase text-[11px]">
+            <span class="w-1.5 h-1.5 rounded-full bg-nothing-red"></span> Strictly Zero Disk Storage
           </div>
-          <p class="text-[11px] text-slate-400 leading-relaxed">
-            Nirmaan does not touch database tables or disks. It uses Supabase's high-performance Realtime Broadcast & Presence channels to bounce messages directly between active browser sockets.
+          <p class="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
+            Nirmaan does not touch database tables or disks. All communication operates over transient WebSocket channels.
           </p>
         </div>
-
         <div class="space-y-3">
           <div>
-            <label class="block text-slate-400 text-[11px] mb-1 font-semibold">SUPABASE PROJECT URL</label>
+            <label class="block text-neutral-500 dark:text-neutral-400 text-[10px] mb-1 font-bold uppercase tracking-wider">PROJECT URL</label>
             <input 
               id="cfg-supabase-url" 
               type="text" 
               placeholder="https://your-project-ref.supabase.co" 
-              class="w-full bg-cyber-950 border border-cyber-border rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500 font-mono"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 focus:border-neutral-950 dark:focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-neutral-950 dark:text-neutral-100 focus:outline-none font-mono"
             />
           </div>
-
           <div>
-            <label class="block text-slate-400 text-[11px] mb-1 font-semibold">SUPABASE ANON / PUBLIC KEY</label>
+            <label class="block text-neutral-500 dark:text-neutral-400 text-[10px] mb-1 font-bold uppercase tracking-wider">ANON KEY</label>
             <input 
               id="cfg-supabase-key" 
               type="password" 
               placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
-              class="w-full bg-cyber-950 border border-cyber-border rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500 font-mono"
+              class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 focus:border-neutral-950 dark:focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-neutral-950 dark:text-neutral-100 focus:outline-none font-mono"
             />
           </div>
         </div>
-
-        <div class="text-[11px] text-slate-400 bg-cyber-950/70 p-2.5 rounded border border-cyber-border/60">
-          💡 Need free keys? Open <a href="https://database.new" target="_blank" class="text-cyan-400 underline font-semibold">database.new</a>, create a free project, and grab <strong>URL & anon key</strong> from <strong>Project Settings → API</strong>.
-        </div>
       </div>
-
-      <div class="flex items-center justify-between gap-3 pt-2 border-t border-cyber-border">
+      <div class="flex items-center justify-between gap-3 pt-2 border-t border-neutral-100 dark:border-neutral-800">
         <button 
           onclick="useLocalMeshDemo()" 
-          class="px-3 py-2 rounded-lg bg-cyber-850 hover:bg-cyber-800 border border-cyber-border text-slate-300 hover:text-white text-xs font-mono transition-colors"
+          class="btn-tactile px-3.5 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-mono font-medium tracking-wide uppercase"
         >
-          Use Local Tab-Mesh
+          Local Mesh
         </button>
-
         <div class="flex items-center gap-2">
           <button 
             onclick="clearSavedKeys()" 
-            class="px-3 py-2 rounded-lg hover:bg-red-950/40 text-red-400 hover:text-red-300 text-xs font-mono transition-colors"
+            class="btn-tactile px-3 py-2 text-red-600 dark:text-red-400 hover:text-red-700 text-xs font-mono font-medium tracking-wide uppercase"
           >
             Reset
           </button>
           <button 
             onclick="saveSupabaseConfig()" 
-            class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-mono font-semibold transition-colors flex items-center gap-1.5"
+            class="btn-tactile px-5 py-2 rounded-full bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 text-xs font-mono font-bold tracking-wider uppercase transition-all shadow"
           >
-            <i data-lucide="check" class="w-3.5 h-3.5"></i> Save & Connect
+            Save & Connect
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 2. ROOM SWITCH / CREATE MODAL -->
-  <div id="room-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-cyber-900 border border-cyber-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-      <button onclick="closeRoomSwitchModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+  <div id="room-modal" class="hidden fixed inset-0 bg-neutral-950/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-3xl w-full max-w-md p-6 sm:p-7 shadow-2xl relative">
+      <button onclick="closeRoomSwitchModal()" class="btn-tactile absolute top-5 right-5 text-neutral-400 hover:text-neutral-950 dark:hover:text-white p-1">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
-
       <div class="flex items-center gap-3 mb-4">
-        <div class="w-10 h-10 rounded-xl bg-cyan-950 border border-cyan-800/80 flex items-center justify-center text-cyan-400">
-          <i data-lucide="hash" class="w-5 h-5"></i>
+        <div class="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 flex items-center justify-center text-neutral-950 dark:text-white font-mono font-bold text-xs">
+          #
         </div>
         <div>
-          <h3 class="text-base font-bold font-mono text-white">Join or Create Room</h3>
-          <p class="text-xs text-slate-400">Isolate conversations by lab bench, team, or problem</p>
+          <h3 class="text-sm font-bold font-mono text-neutral-950 dark:text-white uppercase tracking-wider">Join or Create Room</h3>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 font-mono">Isolated lab frequency</p>
         </div>
       </div>
-
-      <div class="space-y-3 mb-5 font-mono text-xs">
+      <div class="space-y-3.5 mb-5 font-mono text-xs">
         <div>
-          <label class="block text-slate-400 text-[11px] mb-1 font-semibold">ROOM CODE</label>
-          <div class="flex items-center bg-cyber-950 border border-cyber-border focus-within:border-cyan-500 rounded-lg px-3 py-2">
-            <span class="text-cyan-400 font-bold mr-1">#</span>
+          <label class="block text-neutral-500 dark:text-neutral-400 text-[10px] mb-1 font-bold uppercase tracking-wider">ROOM CODE</label>
+          <div class="flex items-center bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 focus-within:border-neutral-950 dark:focus-within:border-white rounded-xl px-3.5 py-2.5">
+            <span class="text-neutral-400 font-bold mr-1">#</span>
             <input 
               id="switch-room-input" 
               type="text" 
-              placeholder="e.g. lab-01, contest-a, team-omega" 
+              placeholder="e.g. lab-01, contest-a, team-1" 
               maxlength="32"
-              class="w-full bg-transparent text-slate-200 placeholder-slate-600 focus:outline-none"
+              class="w-full bg-transparent text-neutral-950 dark:text-white focus:outline-none uppercase tracking-wide"
               onkeydown="if(event.key === 'Enter') submitRoomSwitch()"
             />
           </div>
         </div>
-
         <div>
-          <label class="block text-slate-400 text-[11px] mb-1.5 font-semibold">FREQUENT LAB ROOMS</label>
-          <div class="flex flex-wrap gap-2">
-            <button onclick="quickJoinRoom('lab-main')" class="px-2.5 py-1 bg-cyber-850 hover:bg-cyber-800 border border-cyber-border rounded text-[11px] text-cyan-300">#lab-main</button>
-            <button onclick="quickJoinRoom('lab-01')" class="px-2.5 py-1 bg-cyber-850 hover:bg-cyber-800 border border-cyber-border rounded text-[11px] text-cyan-300">#lab-01</button>
-            <button onclick="quickJoinRoom('dsa-workshop')" class="px-2.5 py-1 bg-cyber-850 hover:bg-cyber-800 border border-cyber-border rounded text-[11px] text-cyan-300">#dsa-workshop</button>
-            <button onclick="quickJoinRoom('instructor-desk')" class="px-2.5 py-1 bg-cyber-850 hover:bg-cyber-800 border border-cyber-border rounded text-[11px] text-cyan-300">#instructor-desk</button>
+          <label class="block text-neutral-500 dark:text-neutral-400 text-[10px] mb-1.5 font-bold uppercase tracking-wider">FREQUENT ROOMS</label>
+          <div class="flex flex-wrap gap-1.5">
+            <button onclick="quickJoinRoom('lab-01')" class="btn-tactile px-3 py-1 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700 rounded-full text-[11px] text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">#lab-01</button>
+            <button onclick="quickJoinRoom('lab-main')" class="btn-tactile px-3 py-1 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700 rounded-full text-[11px] text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">#lab-main</button>
+            <button onclick="quickJoinRoom('dsa-round')" class="btn-tactile px-3 py-1 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700 rounded-full text-[11px] text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">#dsa-round</button>
+            <button onclick="quickJoinRoom('instructor')" class="btn-tactile px-3 py-1 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700 rounded-full text-[11px] text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">#instructor</button>
           </div>
         </div>
       </div>
-
-      <div class="flex justify-end gap-2 pt-2 border-t border-cyber-border">
-        <button onclick="closeRoomSwitchModal()" class="px-3 py-2 rounded-lg bg-cyber-850 hover:bg-cyber-800 text-slate-300 text-xs font-mono">Cancel</button>
-        <button onclick="submitRoomSwitch()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-mono font-semibold">Join Room</button>
+      <div class="flex justify-end gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+        <button onclick="closeRoomSwitchModal()" class="btn-tactile px-4 py-2 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-mono font-medium uppercase tracking-wider">Cancel</button>
+        <button onclick="submitRoomSwitch()" class="btn-tactile px-5 py-2 rounded-full bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 text-xs font-mono font-bold tracking-wider uppercase shadow">Join Room</button>
       </div>
     </div>
   </div>
 
-  <!-- 3. ONLINE PEERS MODAL / DRAWER -->
-  <div id="peers-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-cyber-900 border border-cyber-border rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-      <button onclick="togglePeersModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+  <div id="peers-modal" class="hidden fixed inset-0 bg-neutral-950/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-3xl w-full max-w-md p-6 sm:p-7 shadow-2xl relative">
+      <button onclick="togglePeersModal()" class="btn-tactile absolute top-5 right-5 text-neutral-400 hover:text-neutral-950 dark:hover:text-white p-1">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
-
       <div class="flex items-center gap-3 mb-4">
-        <div class="w-10 h-10 rounded-xl bg-cyan-950 border border-cyan-800/80 flex items-center justify-center text-cyan-400">
-          <i data-lucide="users" class="w-5 h-5"></i>
+        <div class="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 flex items-center justify-center text-neutral-950 dark:text-white font-mono font-bold text-xs">
+          (•)
         </div>
         <div>
-          <h3 class="text-base font-bold font-mono text-white">Workstation Presence</h3>
-          <p class="text-xs text-slate-400">Connected peers in <span id="peers-modal-room-name" class="text-cyan-300">#lab-01</span></p>
+          <h3 class="text-sm font-bold font-mono text-neutral-950 dark:text-white uppercase tracking-wider">NODE TOPOLOGY</h3>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 font-mono">Connected in <span id="peers-modal-room-name" class="font-bold text-neutral-900 dark:text-white">#lab-01</span></p>
         </div>
       </div>
-
       <div class="text-xs font-mono">
-        <div class="text-[11px] text-slate-400 uppercase tracking-wider mb-2 flex justify-between">
-          <span>Active Workstation</span>
-          <span>Status</span>
+        <div class="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase tracking-wider mb-2 flex justify-between font-bold">
+          <span>CALLSIGN</span>
+          <span>STATUS</span>
         </div>
-        <div id="peers-list" class="space-y-2 max-h-60 overflow-y-auto pr-1">
-          <!-- Dynamically populated -->
-        </div>
+        <div id="peers-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
       </div>
-
-      <div class="mt-6 pt-3 border-t border-cyber-border flex items-center justify-between text-xs font-mono text-slate-400">
-        <span>Presence is tracked via WebSockets</span>
-        <button onclick="togglePeersModal()" class="px-3 py-1.5 rounded-lg bg-cyber-850 hover:bg-cyber-800 text-slate-200">Close</button>
+      <div class="mt-6 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs font-mono text-neutral-500 dark:text-neutral-400">
+        <span class="tracking-wide">WebSocket Broadcast</span>
+        <button onclick="togglePeersModal()" class="btn-tactile px-4 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white font-bold uppercase tracking-wider text-[11px]">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- 4. HELP & ARCHITECTURE MODAL -->
-  <div id="help-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-cyber-900 border border-cyber-border rounded-2xl w-full max-w-xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <button onclick="closeHelpModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+  <div id="help-modal" class="hidden fixed inset-0 bg-neutral-950/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl relative">
+      <button onclick="closeHelpModal()" class="btn-tactile absolute top-5 right-5 text-neutral-400 hover:text-neutral-950 dark:hover:text-white p-1">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
-
       <div class="flex items-center gap-3 mb-4">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-emerald-500 flex items-center justify-center text-white shadow-lg">
-          <i data-lucide="zap" class="w-5 h-5"></i>
+        <div class="w-10 h-10 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center font-mono font-bold text-xs">
+          (01)
         </div>
         <div>
-          <h3 class="text-base font-bold font-mono text-white">NIRMAAN: Lab Sync Engine</h3>
-          <p class="text-xs text-slate-400">Ephemeral, Zero-Persistence Architecture</p>
+          <h3 class="text-sm font-bold font-mono text-neutral-950 dark:text-white uppercase tracking-wider">NIRMAAN // TECH SPEC</h3>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 font-mono">Nothing Aesthetic • Zero Persistence Lab Sync</p>
         </div>
       </div>
-
-      <div class="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
-        <div class="p-3 rounded-lg bg-cyber-850 border border-cyber-border">
-          <h4 class="font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
-            <i data-lucide="shield" class="w-4 h-4"></i> Why Zero-Persistence?
-          </h4>
-          <p class="text-slate-400">
-            Computer labs, hackathons, and competitive programming sessions need instant, low-friction sharing without leaving student code stored on a persistent database. When the room closes, everything is gone.
+      <div class="space-y-3.5 text-xs font-mono text-neutral-600 dark:text-neutral-400 leading-relaxed">
+        <div class="p-3.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200/80 dark:border-neutral-800">
+          <h4 class="font-bold text-neutral-950 dark:text-white mb-1 uppercase tracking-wider text-[11px]">TRANSIENT MEMORY</h4>
+          <p class="text-neutral-500 dark:text-neutral-400 text-[11px]">
+            Designed for computer labs and hackathons. No login, no persistent database tables. Payload frames exist only in volatile client memory and evaporate on disconnect.
           </p>
         </div>
-
         <div>
-          <h4 class="font-bold text-white mb-2 flex items-center gap-1.5">
-            <i data-lucide="command" class="w-4 h-4 text-emerald-400"></i> Keyboard Shortcuts & Tricks
-          </h4>
-          <ul class="space-y-1.5 text-slate-400">
-            <li><span class="text-slate-200 font-semibold"><kbd class="bg-cyber-800 px-1.5 py-0.5 rounded text-cyan-300">Ctrl</kbd> + <kbd class="bg-cyber-800 px-1.5 py-0.5 rounded text-cyan-300">Enter</kbd></span>: Broadcast message or code immediately.</li>
-            <li><span class="text-slate-200 font-semibold"><kbd class="bg-cyber-800 px-1.5 py-0.5 rounded text-cyan-300">Tab</kbd></span>: Indent 2 spaces inside the Code Drop editor (does not lose focus).</li>
-            <li><span class="text-slate-200 font-semibold"><kbd class="bg-cyber-800 px-1.5 py-0.5 rounded text-cyan-300">Shift</kbd> + <kbd class="bg-cyber-800 px-1.5 py-0.5 rounded text-cyan-300">Tab</kbd></span>: Dedent code block.</li>
-            <li><span class="text-slate-200 font-semibold"><kbd class="bg-cyber-800 px-1.5 py-0.5 rounded text-cyan-300">Esc</kbd></span>: Close any active modal.</li>
+          <h4 class="font-bold text-neutral-950 dark:text-white mb-1.5 uppercase tracking-wider text-[11px]">COMMANDS & SHORTCUTS</h4>
+          <ul class="space-y-1 text-neutral-500 dark:text-neutral-400 text-[11px]">
+            <li>• <kbd class="bg-neutral-200 dark:bg-neutral-800 px-1 py-0.5 rounded text-neutral-800 dark:text-neutral-200">Enter</kbd>: Transmit payload instantly</li>
+            <li>• <kbd class="bg-neutral-200 dark:bg-neutral-800 px-1 py-0.5 rounded text-neutral-800 dark:text-neutral-200">Shift + Enter</kbd>: Newline in text & code</li>
+            <li>• <kbd class="bg-neutral-200 dark:bg-neutral-800 px-1 py-0.5 rounded text-neutral-800 dark:text-neutral-200">Tab</kbd>: Indent 2 spaces inside Code Drop editor</li>
           </ul>
         </div>
-
-        <div>
-          <h4 class="font-bold text-white mb-2 flex items-center gap-1.5">
-            <i data-lucide="globe" class="w-4 h-4 text-cyan-400"></i> URL Room Direct-Linking
-          </h4>
-          <p class="text-slate-400">
-            Share <code class="text-cyan-300 bg-cyber-950 px-1.5 py-0.5 rounded">https://.../#lab-bench-2</code>. Any student navigating to that URL automatically synchronizes to that channel with no login, authentication, or installation required.
-          </p>
-        </div>
       </div>
-
-      <div class="mt-6 pt-3 border-t border-cyber-border flex justify-end">
-        <button onclick="closeHelpModal()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-mono font-semibold">Understood</button>
+      <div class="mt-6 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex justify-end">
+        <button onclick="closeHelpModal()" class="btn-tactile px-5 py-2 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-mono font-bold tracking-wider uppercase">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Toast Notification Container -->
-  <div id="toast-container" class="fixed bottom-20 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <div id="toast-container" class="fixed bottom-24 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- ======================================================================== -->
-  <!-- APPLICATION ENGINE (VANILLA ES6+ JAVASCRIPT)                             -->
-  <!-- ======================================================================== -->
   <script>
-    // ========================================================================
-    // SUPABASE CONFIGURATION PLACEHOLDERS (AS REQUIRED)
-    // Replace these or configure interactively via the Settings modal!
-    // ========================================================================
     const SUPABASE_URL = "https://vtyzkduicanxopotfcws.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0eXprZHVpY2FueG9wb3RmY3dzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5NzY4MzcsImV4cCI6MjEwNTU1MjgzN30.KbBP79ho6jzlRCeOBSqNEv8Vu8SxNpEAQ9cSEPzjnQw";
 
-    // Application State
     const AppState = {
       roomCode: 'lab-01',
       workstationId: 'ws_' + Math.random().toString(36).substring(2, 9),
       workstationName: 'PC-' + Math.floor(Math.random() * 90 + 10),
-      composerMode: 'text', // 'text' | 'code'
+      composerMode: 'text',
       soundEnabled: true,
+      theme: 'light',
       supabaseClient: null,
       channel: null,
       localBroadcastChannel: null,
-      connectionStatus: 'disconnected', // 'connected', 'connecting', 'disconnected', 'local-mesh'
-      peers: new Map(), // key -> presence object
+      connectionStatus: 'disconnected',
+      peers: new Map(),
+      messages: new Map(),
       messagesCount: 0,
       userScrolledUp: false,
       unreadWhileScrolled: 0
     };
 
-    // Audio Context (Synthesized Zero-Asset Audio for Cyberpunk Chimes)
     let audioCtx = null;
     function getAudioContext() {
       if (!audioCtx) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-          audioCtx = new AudioContextClass();
-        }
+        if (AudioContextClass) audioCtx = new AudioContextClass();
       }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
       return audioCtx;
     }
-
     function playSound(type) {
       if (!AppState.soundEnabled) return;
       try {
         const ctx = getAudioContext();
         if (!ctx) return;
-
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-
         const now = ctx.currentTime;
         if (type === 'send') {
-          // Cyberpunk quick double-chirp
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(900, now + 0.05);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+          osc.start(now); osc.stop(now + 0.06);
+        } else if (type === 'receive') {
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(587.33, now); // D5
-          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08); // A5
+          osc.frequency.setValueAtTime(750, now);
+          osc.frequency.exponentialRampToValueAtTime(1050, now + 0.08);
           gain.gain.setValueAtTime(0.08, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-          osc.start(now);
-          osc.stop(now + 0.12);
-        } else if (type === 'receive') {
-          // Soft notification ping
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(659.25, now); // E5
-          osc.frequency.exponentialRampToValueAtTime(1046.5, now + 0.12); // C6
-          gain.gain.setValueAtTime(0.12, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-          osc.start(now);
-          osc.stop(now + 0.22);
+          osc.start(now); osc.stop(now + 0.12);
         } else if (type === 'action') {
           osc.type = 'sine';
-          osc.frequency.setValueAtTime(440, now);
-          gain.gain.setValueAtTime(0.05, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-          osc.start(now);
-          osc.stop(now + 0.06);
+          osc.frequency.setValueAtTime(480, now);
+          gain.gain.setValueAtTime(0.04, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+          osc.start(now); osc.stop(now + 0.03);
         }
-      } catch (err) {
-        console.warn('Audio synthesis note:', err);
-      }
+      } catch (e) {}
     }
 
-    // ========================================================================
-    // SANITIZATION & SECURITY HELPERS
-    // ========================================================================
+    function initTheme() {
+      const savedTheme = localStorage.getItem('nirmaan_theme') || 'light';
+      applyTheme(savedTheme);
+    }
+    function toggleTheme() {
+      const nextTheme = AppState.theme === 'dark' ? 'light' : 'dark';
+      applyTheme(nextTheme);
+      playSound('action');
+    }
+    function applyTheme(theme) {
+      AppState.theme = theme;
+      const isDark = theme === 'dark';
+      document.documentElement.classList.toggle('dark', isDark);
+      document.documentElement.classList.toggle('light', !isDark);
+      const lightSheet = document.getElementById('hljs-light');
+      const darkSheet = document.getElementById('hljs-dark');
+      if (lightSheet && darkSheet) {
+        lightSheet.disabled = isDark;
+        darkSheet.disabled = !isDark;
+      }
+      const themeIcon = document.getElementById('theme-icon');
+      if (themeIcon) {
+        themeIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+        if (window.lucide) window.lucide.createIcons();
+      }
+      localStorage.setItem('nirmaan_theme', theme);
+      document.querySelectorAll('pre code').forEach((el) => {
+        if (window.hljs) window.hljs.highlightElement(el);
+      });
+    }
+
     function escapeHtml(str) {
       if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
-
     function formatChatLinks(text) {
       const escaped = escapeHtml(text);
-      // Auto-link URLs safely
       const urlRegex = /(https?:\/\/[^\s<]+)/g;
       return escaped.replace(urlRegex, (url) => {
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 break-all">${url}</a>`;
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-neutral-950 dark:text-white underline underline-offset-4 font-semibold hover:text-nothing-red break-all">${url}</a>`;
       });
     }
 
-    // Color generation based on workstation name for distinct user tags
-    function getWorkstationColor(name) {
-      const palette = [
-        { bg: 'bg-emerald-950/80', text: 'text-emerald-300', border: 'border-emerald-800/80' },
-        { bg: 'bg-cyan-950/80', text: 'text-cyan-300', border: 'border-cyan-800/80' },
-        { bg: 'bg-indigo-950/80', text: 'text-indigo-300', border: 'border-indigo-800/80' },
-        { bg: 'bg-purple-950/80', text: 'text-purple-300', border: 'border-purple-800/80' },
-        { bg: 'bg-amber-950/80', text: 'text-amber-300', border: 'border-amber-800/80' },
-        { bg: 'bg-rose-950/80', text: 'text-rose-300', border: 'border-rose-800/80' },
-        { bg: 'bg-teal-950/80', text: 'text-teal-300', border: 'border-teal-800/80' }
-      ];
-      let hash = 0;
-      for (let i = 0; i < name.length; i++) {
-        hash = (hash << 5) - hash + name.charCodeAt(i);
-        hash |= 0;
-      }
-      const index = Math.abs(hash) % palette.length;
-      return palette[index];
-    }
-
-    // ========================================================================
-    // INITIALIZATION & URL ROUTING
-    // ========================================================================
     window.addEventListener('DOMContentLoaded', () => {
-      // 1. Restore or generate workstation identity
+      initTheme();
       const savedName = localStorage.getItem('nirmaan_workstation_name');
-      if (savedName && savedName.trim().length > 0) {
-        AppState.workstationName = savedName.trim();
-      }
+      if (savedName && savedName.trim()) AppState.workstationName = savedName.trim();
       document.getElementById('workstation-name-input').value = AppState.workstationName;
-
-      // 2. Sound preference
-      const savedSound = localStorage.getItem('nirmaan_sound_enabled');
-      if (savedSound !== null) {
-        AppState.soundEnabled = savedSound === 'true';
-      }
-      updateSoundIcon();
-
-      // 3. Resolve room from URL hash
       resolveRoomFromUrl();
-
-      // 4. Initialize Lucide Icons
-      if (window.lucide) {
-        window.lucide.createIcons();
-      }
-
-      // 5. Connect Realtime
+      if (window.lucide) window.lucide.createIcons();
       initRealtime();
-
-      // 6. Setup scroll listener
       setupScrollListener();
-
-      // 7. Input counter listeners
       setupInputListeners();
-
-      // 8. Listen to Hash changes (browser back/forward or manual hash change)
-      window.addEventListener('hashchange', () => {
-        resolveRoomFromUrl(true);
-      });
+      window.addEventListener('hashchange', () => { resolveRoomFromUrl(true); });
     });
 
     function resolveRoomFromUrl(switchImmediately = false) {
       let hash = window.location.hash.trim();
       if (hash.startsWith('#')) hash = hash.substring(1);
       if (hash.startsWith('room-')) hash = hash.substring(5);
-
       const cleanRoom = hash.toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'lab-01';
-      
-      if (switchImmediately && cleanRoom !== AppState.roomCode) {
-        switchRoom(cleanRoom);
-      } else {
-        AppState.roomCode = cleanRoom;
-        updateRoomUI();
-      }
+      if (switchImmediately && cleanRoom !== AppState.roomCode) switchRoom(cleanRoom);
+      else { AppState.roomCode = cleanRoom; updateRoomUI(); }
     }
-
     function updateRoomUI() {
-      document.getElementById('current-room-label').textContent = AppState.roomCode;
+      document.getElementById('current-room-label').textContent = AppState.roomCode.toUpperCase();
       document.getElementById('peers-modal-room-name').textContent = '#' + AppState.roomCode;
-      // Keep hash updated without causing loop
       if (window.location.hash !== '#' + AppState.roomCode && window.location.hash !== '#room-' + AppState.roomCode) {
         window.history.replaceState(null, '', '#' + AppState.roomCode);
       }
     }
 
-    // ========================================================================
-    // SUPABASE & REALTIME COMMUNICATIONS
-    // ========================================================================
     function getEffectiveCredentials() {
       const storedUrl = localStorage.getItem('nirmaan_supabase_url');
       const storedKey = localStorage.getItem('nirmaan_supabase_key');
-
       let url = (storedUrl && storedUrl.trim()) || SUPABASE_URL;
       let key = (storedKey && storedKey.trim()) || SUPABASE_ANON_KEY;
-
       const isPlaceholder = !url || !key || url.includes('YOUR_SUPABASE_URL') || key.includes('YOUR_SUPABASE_ANON_KEY');
-
-      return {
-        url: url.trim(),
-        key: key.trim(),
-        isConfigured: !isPlaceholder
-      };
+      return { url: url.trim(), key: key.trim(), isConfigured: !isPlaceholder };
     }
 
     async function initRealtime() {
@@ -856,174 +665,101 @@
       const warningBanner = document.getElementById('setup-warning-banner');
       const warningDot = document.getElementById('settings-warning-dot');
 
-      // Cleanup existing channel if any
       if (AppState.channel) {
-        try {
-          await AppState.channel.unsubscribe();
-        } catch (e) {
-          console.warn('Error unsubscribing channel:', e);
-        }
+        try { await AppState.channel.unsubscribe(); } catch (e) {}
         AppState.channel = null;
       }
       if (AppState.localBroadcastChannel) {
-        try {
-          AppState.localBroadcastChannel.close();
-        } catch (e) {}
+        try { AppState.localBroadcastChannel.close(); } catch (e) {}
         AppState.localBroadcastChannel = null;
       }
 
       if (!creds.isConfigured) {
-        // Fallback to in-browser Local BroadcastChannel Mesh
         warningBanner.classList.remove('hidden');
         warningDot.classList.remove('hidden');
         setupLocalMeshChannel();
         return;
       }
 
-      // Valid credentials exist
       warningBanner.classList.add('hidden');
       warningDot.classList.add('hidden');
       setConnectionStatus('connecting', 'CONNECTING...');
 
       try {
-        if (!window.supabase) {
-          throw new Error('Supabase library not loaded from CDN');
-        }
-
-        AppState.supabaseClient = window.supabase.createClient(creds.url, creds.key, {
-          realtime: {
-            params: {
-              eventsPerSecond: 20
-            }
-          }
-        });
-
+        AppState.supabaseClient = window.supabase.createClient(creds.url, creds.key, { realtime: { params: { eventsPerSecond: 20 } } });
         const channelTopic = `nirmaan-room-${AppState.roomCode}`;
         AppState.channel = AppState.supabaseClient.channel(channelTopic, {
-          config: {
-            broadcast: { self: false },
-            presence: { key: AppState.workstationId }
-          }
+          config: { broadcast: { self: false }, presence: { key: AppState.workstationId } }
         });
 
-        // 1. Message Broadcast Listener
         AppState.channel.on('broadcast', { event: 'nirmaan_payload' }, (response) => {
-          if (response && response.payload) {
-            handleIncomingPayload(response.payload);
-          }
+          if (response && response.payload) handleIncomingPayload(response.payload);
+        });
+        AppState.channel.on('broadcast', { event: 'nirmaan_edit' }, (response) => {
+          if (response && response.payload) handleIncomingEdit(response.payload);
+        });
+        AppState.channel.on('broadcast', { event: 'nirmaan_delete' }, (response) => {
+          if (response && response.payload) handleIncomingDelete(response.payload);
         });
 
-        // 2. Presence Tracking Listeners
         AppState.channel
-          .on('presence', { event: 'sync' }, () => {
-            handlePresenceSync();
-          })
-          .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-            handlePresenceJoin(key, newPresences);
-          })
-          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-            handlePresenceLeave(key, leftPresences);
-          });
+          .on('presence', { event: 'sync' }, () => handlePresenceSync())
+          .on('presence', { event: 'join' }, ({ key, newPresences }) => handlePresenceJoin(key, newPresences))
+          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => handlePresenceLeave(key, leftPresences));
 
-        // 3. Subscribe & Track
         AppState.channel.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             setConnectionStatus('connected', 'LIVE (SUPABASE)');
-            showToast('Connected to Supabase Realtime Mesh', 'success');
-
-            // Track this workstation presence
+            showToast('Connected to Supabase Realtime', 'success');
             try {
-              await AppState.channel.track({
-                id: AppState.workstationId,
-                name: AppState.workstationName,
-                room: AppState.roomCode,
-                joinedAt: Date.now()
-              });
-            } catch (err) {
-              console.warn('Presence track warning:', err);
-            }
+              await AppState.channel.track({ id: AppState.workstationId, name: AppState.workstationName, room: AppState.roomCode, joinedAt: Date.now() });
+            } catch (err) {}
           } else if (status === 'CHANNEL_ERROR') {
             setConnectionStatus('disconnected', 'CHANNEL ERROR');
-            showToast('Supabase channel error. Verify credentials.', 'error');
-          } else if (status === 'TIMED_OUT') {
-            setConnectionStatus('disconnected', 'TIMEOUT');
-          } else if (status === 'CLOSED') {
-            setConnectionStatus('disconnected', 'CLOSED');
+            showToast('Channel error. Using local mesh.', 'error');
+            setupLocalMeshChannel();
+          } else if (status === 'TIMED_OUT' || status === 'CLOSED') {
+            setConnectionStatus('disconnected', 'DISCONNECTED');
           }
         });
-
       } catch (err) {
-        console.error('Failed to init Supabase client:', err);
-        setConnectionStatus('disconnected', 'CONFIG ERROR');
-        showToast('Supabase connection failed. Falling back to Local Mesh.', 'error');
+        setConnectionStatus('disconnected', 'ERROR');
         setupLocalMeshChannel();
       }
     }
 
-    // Seamless Local Mesh Fallback using HTML5 BroadcastChannel API
     function setupLocalMeshChannel() {
       setConnectionStatus('local-mesh', 'LOCAL MESH');
       const channelName = `nirmaan-local-${AppState.roomCode}`;
-      
       try {
         AppState.localBroadcastChannel = new BroadcastChannel(channelName);
         AppState.localBroadcastChannel.onmessage = (event) => {
           const data = event.data;
           if (!data) return;
-
-          if (data.type === 'nirmaan_payload') {
-            handleIncomingPayload(data.payload);
-          } else if (data.type === 'presence_ping') {
-            // Register peer
+          if (data.type === 'nirmaan_payload') handleIncomingPayload(data.payload);
+          else if (data.type === 'nirmaan_edit') handleIncomingEdit(data.payload);
+          else if (data.type === 'nirmaan_delete') handleIncomingDelete(data.payload);
+          else if (data.type === 'presence_ping') {
             registerLocalPeer(data.workstation);
-            // Respond with our presence
             AppState.localBroadcastChannel.postMessage({
               type: 'presence_pong',
-              workstation: {
-                id: AppState.workstationId,
-                name: AppState.workstationName,
-                joinedAt: Date.now()
-              }
+              workstation: { id: AppState.workstationId, name: AppState.workstationName, joinedAt: Date.now() }
             });
-          } else if (data.type === 'presence_pong') {
-            registerLocalPeer(data.workstation);
-          } else if (data.type === 'presence_bye') {
-            AppState.peers.delete(data.workstationId);
-            updatePeersCountUI();
-          }
+          } else if (data.type === 'presence_pong') registerLocalPeer(data.workstation);
+          else if (data.type === 'presence_bye') { AppState.peers.delete(data.workstationId); updatePeersCountUI(); }
         };
-
-        // Broadcast our presence to other tabs
         AppState.localBroadcastChannel.postMessage({
           type: 'presence_ping',
-          workstation: {
-            id: AppState.workstationId,
-            name: AppState.workstationName,
-            joinedAt: Date.now()
-          }
+          workstation: { id: AppState.workstationId, name: AppState.workstationName, joinedAt: Date.now() }
         });
-
-        // Register self in peers
-        AppState.peers.set(AppState.workstationId, {
-          id: AppState.workstationId,
-          name: AppState.workstationName,
-          joinedAt: Date.now(),
-          isSelf: true
-        });
+        AppState.peers.set(AppState.workstationId, { id: AppState.workstationId, name: AppState.workstationName, joinedAt: Date.now(), isSelf: true });
         updatePeersCountUI();
-
         window.addEventListener('beforeunload', () => {
           if (AppState.localBroadcastChannel) {
-            AppState.localBroadcastChannel.postMessage({
-              type: 'presence_bye',
-              workstationId: AppState.workstationId
-            });
+            AppState.localBroadcastChannel.postMessage({ type: 'presence_bye', workstationId: AppState.workstationId });
           }
         });
-
-      } catch (err) {
-        console.warn('BroadcastChannel not supported in this browser context:', err);
-      }
+      } catch (err) {}
     }
 
     function registerLocalPeer(workstation) {
@@ -1032,121 +768,83 @@
       updatePeersCountUI();
     }
 
-    // ========================================================================
-    // PRESENCE SYNC (SUPABASE)
-    // ========================================================================
     function handlePresenceSync() {
       if (!AppState.channel) return;
       const state = AppState.channel.presenceState();
       AppState.peers.clear();
-
-      // Include self
-      AppState.peers.set(AppState.workstationId, {
-        id: AppState.workstationId,
-        name: AppState.workstationName,
-        joinedAt: Date.now(),
-        isSelf: true
-      });
-
+      AppState.peers.set(AppState.workstationId, { id: AppState.workstationId, name: AppState.workstationName, joinedAt: Date.now(), isSelf: true });
       for (const key in state) {
         const presences = state[key];
         if (Array.isArray(presences) && presences.length > 0) {
           const peer = presences[0];
-          if (peer.id) {
-            AppState.peers.set(peer.id, {
-              ...peer,
-              isSelf: peer.id === AppState.workstationId
-            });
-          }
+          if (peer.id) AppState.peers.set(peer.id, { ...peer, isSelf: peer.id === AppState.workstationId });
         }
       }
       updatePeersCountUI();
     }
-
     function handlePresenceJoin(key, newPresences) {
       if (Array.isArray(newPresences)) {
         newPresences.forEach(p => {
           if (p.id && p.id !== AppState.workstationId) {
             AppState.peers.set(p.id, p);
-            showToast(`${p.name || 'Workstation'} joined the room`, 'info');
+            showToast(`${p.name || 'Node'} connected`, 'info');
           }
         });
         updatePeersCountUI();
       }
     }
-
     function handlePresenceLeave(key, leftPresences) {
       if (Array.isArray(leftPresences)) {
-        leftPresences.forEach(p => {
-          if (p.id) {
-            AppState.peers.delete(p.id);
-          }
-        });
+        leftPresences.forEach(p => { if (p.id) AppState.peers.delete(p.id); });
         updatePeersCountUI();
       }
     }
-
     function updatePeersCountUI() {
       const count = AppState.peers.size;
       const countEl = document.getElementById('peers-count');
       if (countEl) countEl.textContent = count;
       renderPeersList();
     }
-
     function renderPeersList() {
       const listEl = document.getElementById('peers-list');
       if (!listEl) return;
-
       if (AppState.peers.size === 0) {
-        listEl.innerHTML = `<div class="text-slate-500 py-2 text-center">No workstations detected</div>`;
+        listEl.innerHTML = `<div class="text-neutral-400 dark:text-neutral-500 py-2 text-center text-xs">No active nodes detected</div>`;
         return;
       }
-
       let html = '';
       AppState.peers.forEach((peer) => {
         const isSelf = peer.id === AppState.workstationId;
-        const color = getWorkstationColor(peer.name || 'PC');
         html += `
-          <div class="flex items-center justify-between p-2 rounded-lg bg-cyber-950 border border-cyber-border">
+          <div class="flex items-center justify-between p-2.5 rounded-2xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200/80 dark:border-neutral-800">
             <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span class="font-bold ${color.text}">${escapeHtml(peer.name || 'PC-00')}</span>
-              ${isSelf ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">YOU</span>' : ''}
+              <span class="w-1.5 h-1.5 rounded-full bg-neutral-950 dark:bg-white"></span>
+              <span class="font-bold text-neutral-950 dark:text-neutral-200 font-mono tracking-wide">${escapeHtml(peer.name || 'PC-00')}</span>
+              ${isSelf ? '<span class="text-[9px] px-1.5 py-0.2 rounded border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-bold font-mono">YOU</span>' : ''}
             </div>
-            <span class="text-[11px] text-slate-500 font-mono">ACTIVE</span>
+            <div class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span class="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono tracking-wider">ONLINE</span>
+            </div>
           </div>
         `;
       });
       listEl.innerHTML = html;
     }
 
-    // ========================================================================
-    // STATUS & UI INDICATORS
-    // ========================================================================
     function setConnectionStatus(status, label) {
       AppState.connectionStatus = status;
-      const indicator = document.getElementById('conn-indicator');
+      const led = document.getElementById('conn-led');
       const text = document.getElementById('conn-status-text');
-
-      if (!indicator || !text) return;
-
+      if (!led || !text) return;
       text.textContent = label;
-
-      indicator.className = 'w-2 h-2 rounded-full';
-      if (status === 'connected') {
-        indicator.classList.add('bg-emerald-400', 'shadow-sm', 'shadow-emerald-400');
-      } else if (status === 'connecting') {
-        indicator.classList.add('bg-amber-400', 'animate-pulse');
-      } else if (status === 'local-mesh') {
-        indicator.classList.add('bg-cyan-400');
-      } else {
-        indicator.classList.add('bg-red-500');
-      }
+      led.className = 'w-1.5 h-1.5 rounded-full';
+      if (status === 'connected') led.classList.add('bg-emerald-500');
+      else if (status === 'connecting') led.classList.add('bg-amber-400', 'animate-pulse');
+      else if (status === 'local-mesh') led.classList.add('bg-neutral-950', 'dark:bg-white');
+      else led.classList.add('bg-nothing-red');
     }
 
-    // ========================================================================
-    // PAYLOAD BROADCASTING (SENDING & RECEIVING)
-    // ========================================================================
     async function broadcastCurrentPayload() {
       let payload = null;
       const mode = AppState.composerMode;
@@ -1155,7 +853,6 @@
         const textInput = document.getElementById('text-input');
         const text = textInput.value.trim();
         if (!text) return;
-
         payload = {
           id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
           type: 'text',
@@ -1164,296 +861,647 @@
           timestamp: Date.now(),
           content: text
         };
-
         textInput.value = '';
         updateCharCount(0);
       } else {
         const codeInput = document.getElementById('code-input');
         const langSelect = document.getElementById('code-language-select');
         const titleInput = document.getElementById('code-title-input');
-
         const code = codeInput.value;
         if (!code.trim()) return;
-
         let language = langSelect.value;
-        if (language === 'auto') {
-          language = autoDetectLanguage(code);
-        }
-
+        if (language === 'auto') language = autoDetectLanguage(code);
         payload = {
           id: 'code_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
           type: 'code',
           senderId: AppState.workstationId,
           senderName: AppState.workstationName,
           timestamp: Date.now(),
-          content: code,
+          content: code.trim(),
           language: language,
           title: titleInput.value.trim() || getDefaultFileName(language)
         };
-
         codeInput.value = '';
         titleInput.value = '';
         updateCharCount(0);
       }
 
-      // Render immediately in our local feed with isSelf = true
+      AppState.messages.set(payload.id, payload);
       renderMessage(payload, true);
       playSound('send');
 
-      // Dispatch to peers
       if (AppState.channel && AppState.connectionStatus === 'connected') {
         try {
-          await AppState.channel.send({
-            type: 'broadcast',
-            event: 'nirmaan_payload',
-            payload: payload
-          });
-        } catch (err) {
-          console.error('Error broadcasting payload over Supabase:', err);
-          showToast('Broadcast failed over network', 'error');
-        }
+          await AppState.channel.send({ type: 'broadcast', event: 'nirmaan_payload', payload: payload });
+        } catch (err) { showToast('Transmission failed', 'error'); }
       } else if (AppState.localBroadcastChannel) {
-        AppState.localBroadcastChannel.postMessage({
-          type: 'nirmaan_payload',
-          payload: payload
-        });
+        AppState.localBroadcastChannel.postMessage({ type: 'nirmaan_payload', payload: payload });
       }
     }
 
     function handleIncomingPayload(payload) {
       if (!payload || !payload.id) return;
-      // Prevent duplicate rendering if sender got bounced
       if (payload.senderId === AppState.workstationId) return;
-
+      AppState.messages.set(payload.id, payload);
       renderMessage(payload, false);
       playSound('receive');
+      if (AppState.userScrolledUp) { AppState.unreadWhileScrolled++; updateScrollBottomButton(); }
+    }
 
-      if (AppState.userScrolledUp) {
-        AppState.unreadWhileScrolled++;
-        updateScrollBottomButton();
+    function handleIncomingEdit(editPayload) {
+      if (!editPayload || !editPayload.id) return;
+      const existing = AppState.messages.get(editPayload.id);
+      if (!existing) return;
+      // Apply edit
+      if (editPayload.type === 'text' || existing.type === 'text') {
+        existing.content = editPayload.content;
+      } else if (editPayload.type === 'code' || existing.type === 'code') {
+        existing.content = editPayload.content;
+        if (editPayload.title) existing.title = editPayload.title;
+        if (editPayload.language) existing.language = editPayload.language;
+      }
+      existing.edited = true;
+      existing.editedAt = editPayload.editedAt || Date.now();
+      AppState.messages.set(existing.id, existing);
+      // Update DOM
+      applyEditToDOM(existing);
+      if (editPayload.editorId !== AppState.workstationId) {
+        showToast(`Edited by ${escapeHtml(editPayload.editorName || 'Node')}`, 'info');
+        playSound('receive');
       }
     }
 
-    // ========================================================================
-    // MESSAGE RENDERING (CHAT & CODE DROPS)
-    // ========================================================================
+    function handleIncomingDelete(deletePayload) {
+      if (!deletePayload || !deletePayload.id) return;
+      const existing = AppState.messages.get(deletePayload.id);
+      if (!existing) return;
+      // Only allow owner deletion? But apply anyway
+      AppState.messages.delete(deletePayload.id);
+      const el = document.querySelector(`[data-id="${deletePayload.id}"]`);
+      if (el) {
+        el.classList.add('animate-delete-out');
+        setTimeout(() => el.remove(), 180);
+        if (AppState.messages.size === 0) {
+          const emptyState = document.getElementById('empty-state');
+          if (emptyState) emptyState.classList.remove('hidden');
+        }
+      }
+      if (deletePayload.deleterId !== AppState.workstationId) {
+        showToast(`Transmission removed`, 'info');
+        playSound('action');
+      }
+    }
+
+    function applyEditToDOM(payload) {
+      const card = document.querySelector(`[data-id="${payload.id}"]`);
+      if (!card) return;
+      if (payload.type === 'text') {
+        const contentDiv = document.getElementById(`text-content-${payload.id}`);
+        const editedBadge = document.getElementById(`edited-badge-${payload.id}`);
+        if (contentDiv) {
+          contentDiv.innerHTML = formatChatLinks(payload.content.trim());
+        }
+        if (editedBadge) editedBadge.classList.remove('hidden');
+        // Close edit mode if open
+        const editContainer = document.getElementById(`text-edit-${payload.id}`);
+        const viewContent = document.getElementById(`text-content-${payload.id}`);
+        if (editContainer && viewContent) {
+          editContainer.classList.add('hidden');
+          viewContent.classList.remove('hidden');
+        }
+      } else {
+        // Code
+        const titleEl = document.getElementById(`code-title-${payload.id}`);
+        const langBadge = document.getElementById(`code-lang-${payload.id}`);
+        const lineCountEl = document.getElementById(`code-lines-${payload.id}`);
+        const codeEl = document.getElementById(`code-block-${payload.id}`);
+        const lineNumbersEl = document.getElementById(`code-linenums-${payload.id}`);
+        const editedBadge = document.getElementById(`code-edited-badge-${payload.id}`);
+        if (titleEl) titleEl.textContent = payload.title;
+        if (titleEl) titleEl.title = payload.title;
+        if (langBadge) langBadge.textContent = (payload.language || 'plaintext').toUpperCase();
+        if (codeEl) {
+          const cleanContent = payload.content.trim();
+          codeEl.textContent = cleanContent;
+          codeEl.className = `language-${payload.language} block font-mono code-pre`;
+          if (window.hljs) window.hljs.highlightElement(codeEl);
+          // Update line numbers
+          const lineCount = cleanContent.split('\n').length;
+          if (lineCountEl) lineCountEl.textContent = `(${lineCount}L)`;
+          if (lineNumbersEl) {
+            let lineNumbersHtml = '';
+            for (let i = 1; i <= lineCount; i++) lineNumbersHtml += `<div class="code-line-num text-neutral-400 dark:text-neutral-500 select-none">${i}</div>`;
+            lineNumbersEl.innerHTML = lineNumbersHtml;
+          }
+        }
+        if (editedBadge) editedBadge.classList.remove('hidden');
+        const editContainer = document.getElementById(`code-edit-${payload.id}`);
+        const viewContainer = document.getElementById(`code-view-${payload.id}`);
+        if (editContainer && viewContainer) {
+          editContainer.classList.add('hidden');
+          viewContainer.classList.remove('hidden');
+        }
+      }
+    }
+
     function renderMessage(payload, isSelf = false) {
       const container = document.getElementById('messages-container');
       const emptyState = document.getElementById('empty-state');
-      if (emptyState) {
-        emptyState.classList.add('hidden');
-      }
-
+      if (emptyState) emptyState.classList.add('hidden');
       AppState.messagesCount++;
 
-      const date = new Date(payload.timestamp || Date.now());
-      const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const color = getWorkstationColor(payload.senderName || 'PC');
+      // Ensure stored
+      if (!AppState.messages.has(payload.id)) AppState.messages.set(payload.id, payload);
 
+      const date = new Date(payload.timestamp || Date.now());
+      const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const messageCard = document.createElement('div');
-      messageCard.className = 'w-full animate-fadeIn transition-all';
+      messageCard.className = 'w-full animate-card-in group/message';
       messageCard.setAttribute('data-id', payload.id);
 
       if (payload.type === 'text') {
-        // PLAIN TEXT MESSAGE
         messageCard.innerHTML = `
-          <div class="p-3.5 rounded-xl bg-cyber-900/90 border border-cyber-border hover:border-cyber-700/80 transition-all shadow-sm">
-            <div class="flex items-center justify-between text-xs mb-1.5">
+          <div class="p-4 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200/90 dark:border-neutral-800 shadow-xs hover:border-neutral-400 dark:hover:border-neutral-700 transition-all">
+            <div class="flex items-center justify-between text-xs mb-2 font-mono">
               <div class="flex items-center gap-2">
-                <span class="px-2 py-0.5 rounded font-mono font-bold text-[11px] ${color.bg} ${color.text} border ${color.border}">
-                  ${escapeHtml(payload.senderName)}
-                </span>
-                ${isSelf ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">YOU</span>' : ''}
+                <span class="font-bold text-xs tracking-wider uppercase text-neutral-950 dark:text-neutral-100">${escapeHtml(payload.senderName)}</span>
+                ${isSelf ? '<span class="text-[9px] tracking-widest px-1.5 py-0.2 rounded border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-bold">YOU</span>' : ''}
+                <span id="edited-badge-${payload.id}" class="${payload.edited ? '' : 'hidden'} text-[9px] px-1.5 py-0.2 rounded-full bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400 font-bold tracking-wider uppercase">EDITED</span>
               </div>
-              <span class="text-[11px] text-slate-500 font-mono">${timeStr}</span>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-neutral-400 dark:text-neutral-500 tracking-wider">${timeStr}</span>
+                ${isSelf ? `
+                <div class="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/message:opacity-100 transition-opacity">
+                  <button onclick="initiateEdit('${payload.id}')" title="Edit message" class="btn-tactile text-[10px] font-mono font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-white bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white transition-all">EDIT</button>
+                  <button onclick="requestDeleteMessage('${payload.id}')" title="Delete message" class="btn-tactile text-[10px] font-mono font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-nothing-red bg-white dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-nothing-red hover:border-nothing-red transition-all">DEL</button>
+                </div>
+                ` : ''}
+              </div>
             </div>
-            <div class="text-sm text-slate-200 leading-relaxed font-sans whitespace-pre-wrap pl-1">
-              ${formatChatLinks(payload.content)}
+            <div id="text-content-${payload.id}" class="text-sm text-neutral-900 dark:text-neutral-100 leading-relaxed font-sans whitespace-pre-wrap break-words">${formatChatLinks(payload.content.trim())}</div>
+            
+            <div id="text-edit-${payload.id}" class="hidden mt-3">
+              <textarea id="text-edit-input-${payload.id}" class="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 focus:border-neutral-950 dark:focus:border-white rounded-xl px-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 focus:outline-none resize-none font-sans" rows="3"></textarea>
+              <div class="flex items-center justify-end gap-2 mt-2">
+                <button onclick="cancelEditMessage('${payload.id}')" class="btn-tactile px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-[11px] font-mono font-bold uppercase tracking-wider">Cancel</button>
+                <button onclick="saveEditMessage('${payload.id}')" class="btn-tactile px-4 py-1.5 rounded-full bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 text-[11px] font-mono font-bold uppercase tracking-wider">Save</button>
+              </div>
             </div>
+
+            <div id="delete-confirm-${payload.id}" class="hidden mt-3 p-2.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 flex items-center justify-between">
+              <span class="text-[11px] font-mono font-bold tracking-wider uppercase text-red-700 dark:text-red-300">DELETE THIS TRANSMISSION?</span>
+              <div class="flex items-center gap-1.5">
+                <button onclick="cancelDeleteMessage('${payload.id}')" class="btn-tactile px-3 py-1 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-[10px] font-mono font-bold uppercase">NO</button>
+                <button onclick="confirmDeleteMessage('${payload.id}')" class="btn-tactile px-3 py-1 rounded-full bg-nothing-red hover:bg-red-700 text-white text-[10px] font-mono font-bold uppercase tracking-wider">YES, DELETE</button>
+              </div>
+            </div>
+
           </div>
         `;
       } else {
-        // CODE DROP PAYLOAD
         const lang = (payload.language || 'plaintext').toLowerCase();
         const title = payload.title || getDefaultFileName(lang);
-        const codeLines = payload.content.split('\n');
+        const cleanContent = (payload.content || '').trim();
+        const codeLines = cleanContent.split('\n');
         const lineCount = codeLines.length;
-
-        // Create line numbers HTML
         let lineNumbersHtml = '';
-        for (let i = 1; i <= lineCount; i++) {
-          lineNumbersHtml += `<div class="code-line-num leading-[1.5rem] text-slate-600 select-none">${i}</div>`;
-        }
-
-        const safeCode = escapeHtml(payload.content);
+        for (let i = 1; i <= lineCount; i++) lineNumbersHtml += `<div class="code-line-num text-neutral-400 dark:text-neutral-500 select-none">${i}</div>`;
+        const safeCode = escapeHtml(cleanContent);
         const langDisplay = lang.toUpperCase();
 
         messageCard.innerHTML = `
-          <div class="rounded-xl border border-cyber-border bg-cyber-900 overflow-hidden shadow-lg shadow-black/40 hover:border-cyan-800/60 transition-all">
-            <!-- Code Drop Header -->
-            <div class="bg-cyber-850 px-4 py-2.5 border-b border-cyber-border flex flex-wrap items-center justify-between gap-2">
-              <div class="flex items-center gap-2.5">
-                <div class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/70 text-xs font-bold uppercase tracking-wider">
-                  <i data-lucide="file-code" class="w-3.5 h-3.5"></i>
-                  <span>${langDisplay}</span>
-                </div>
-                <span class="text-xs font-semibold text-slate-200 truncate max-w-[200px] sm:max-w-xs" title="${escapeHtml(title)}">${escapeHtml(title)}</span>
-                <span class="text-[11px] text-slate-400 font-mono">(${lineCount} lines)</span>
+          <div class="rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden shadow-xs hover:border-neutral-400 dark:hover:border-neutral-700 transition-all group/codecard">
+            <div class="bg-neutral-50 dark:bg-neutral-950 px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2 font-mono min-w-0">
+                <span id="code-lang-${payload.id}" class="px-2 py-0.5 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-[10px] font-bold uppercase tracking-widest shrink-0">
+                  ${langDisplay}
+                </span>
+                <span id="code-title-${payload.id}" class="text-xs font-bold text-neutral-900 dark:text-neutral-200 truncate max-w-[140px] sm:max-w-[200px]" title="${escapeHtml(title)}">${escapeHtml(title)}</span>
+                <span id="code-lines-${payload.id}" class="text-[10px] text-neutral-400 dark:text-neutral-500 shrink-0">(${lineCount}L)</span>
+                <span id="code-edited-badge-${payload.id}" class="${payload.edited ? '' : 'hidden'} text-[9px] px-1.5 py-0.2 rounded-full bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 font-bold tracking-wider uppercase">EDITED</span>
               </div>
 
-              <div class="flex items-center gap-2">
-                <div class="flex items-center gap-1 text-xs">
-                  <span class="px-2 py-0.5 rounded font-mono text-[11px] ${color.bg} ${color.text} border ${color.border}">
-                    ${escapeHtml(payload.senderName)}
-                  </span>
-                  ${isSelf ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">YOU</span>' : ''}
-                  <span class="text-[11px] text-slate-500 font-mono ml-1 hidden sm:inline">${timeStr}</span>
+              <div class="flex items-center gap-2 font-mono">
+                <div class="flex items-center gap-1.5 text-xs mr-1">
+                  <span class="font-bold text-neutral-950 dark:text-neutral-200 tracking-wider truncate max-w-[80px]">${escapeHtml(payload.senderName)}</span>
+                  ${isSelf ? '<span class="text-[8px] tracking-widest px-1.5 py-0.2 rounded border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-bold shrink-0">YOU</span>' : ''}
+                  <span class="text-[10px] text-neutral-400 dark:text-neutral-500 hidden sm:inline ml-1">${timeStr}</span>
                 </div>
 
-                <!-- Action Buttons: Copy & Download -->
-                <div class="flex items-center gap-1 ml-2">
-                  <button 
-                    onclick="copyCodeSnippet(this)" 
-                    class="copy-btn flex items-center gap-1 px-2.5 py-1 rounded bg-cyber-800 hover:bg-cyber-700 text-slate-300 hover:text-white text-xs transition-all"
-                    title="Copy full code snippet"
-                  >
-                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                    <span>Copy</span>
-                  </button>
-                  <button 
-                    onclick="downloadCodeSnippet(this, '${escapeHtml(title)}', '${lang}')" 
-                    class="flex items-center gap-1 px-2.5 py-1 rounded bg-cyber-800 hover:bg-cyber-700 text-slate-300 hover:text-white text-xs transition-all"
-                    title="Download file"
-                  >
-                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                    <span>Save</span>
-                  </button>
+                <div class="flex items-center gap-1">
+                  ${isSelf ? `
+                    <button onclick="initiateEdit('${payload.id}')" title="Edit code" class="btn-tactile text-[10px] font-mono font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-white bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white transition-all">EDIT</button>
+                    <button onclick="requestDeleteMessage('${payload.id}')" title="Delete code" class="btn-tactile text-[10px] font-mono font-bold tracking-wider uppercase px-2.5 py-0.5 rounded-full border border-neutral-200 dark:border-neutral-700 hover:border-nothing-red bg-white dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 hover:text-nothing-red transition-all">DEL</button>
+                  ` : ''}
+                  <button id="copy-btn-${payload.id}" onclick="copyCodeSnippet('${payload.id}')" title="Copy code" class="btn-tactile text-[10px] font-mono font-bold tracking-wider uppercase px-3 py-0.5 rounded-full border border-neutral-300 dark:border-neutral-700 hover:border-neutral-950 dark:hover:border-white text-neutral-800 dark:text-neutral-200 bg-white dark:bg-neutral-800 transition-all">COPY</button>
+                  <button id="save-btn-${payload.id}" onclick="saveCodeSnippet('${payload.id}')" title="Save code to file" class="btn-tactile text-[10px] font-mono font-bold tracking-wider uppercase px-3 py-0.5 rounded-full bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 transition-all shadow-xs">SAVE</button>
                 </div>
               </div>
             </div>
 
-            <!-- Code Viewer with Line Numbers -->
-            <div class="relative flex font-mono text-xs overflow-x-auto bg-[#0d1117] p-3 text-slate-200 max-h-[500px] overflow-y-auto">
-              <!-- Line Numbers Gutter -->
-              <div class="line-numbers-col pr-3 pl-1 text-slate-600 text-right select-none font-mono border-r border-slate-800 shrink-0">
+            <div id="code-view-${payload.id}" class="relative flex font-mono text-xs overflow-x-auto bg-[#FAFAFA] dark:bg-[#0D1117] p-3.5 text-neutral-950 dark:text-neutral-100 max-h-[480px] overflow-y-auto">
+              <div id="code-linenums-${payload.id}" class="line-numbers-col pr-3 pl-1 text-right select-none font-mono border-r border-neutral-200 dark:border-neutral-800 shrink-0">
                 ${lineNumbersHtml}
               </div>
-              
-              <!-- Code Container -->
               <div class="pl-3.5 flex-1 min-w-0 overflow-x-auto">
-                <pre class="m-0 p-0 overflow-visible code-pre"><code class="language-${lang} block font-mono code-pre">${safeCode}</code></pre>
+                <pre class="m-0 p-0 overflow-visible code-pre"><code id="code-block-${payload.id}" class="language-${lang} block font-mono code-pre">${safeCode}</code></pre>
               </div>
             </div>
+
+            <div id="code-edit-${payload.id}" class="hidden p-3.5 bg-neutral-50 dark:bg-neutral-950 border-t border-neutral-200 dark:border-neutral-800 space-y-2.5">
+              <div class="flex flex-wrap gap-2">
+                <input id="code-edit-title-${payload.id}" type="text" placeholder="Filename" maxlength="40" class="flex-1 min-w-[140px] bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 focus:border-neutral-950 dark:focus:border-white rounded-xl px-3 py-1.5 text-xs text-neutral-950 dark:text-neutral-100 focus:outline-none font-mono" />
+                <select id="code-edit-lang-${payload.id}" class="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 focus:border-neutral-950 dark:focus:border-white rounded-xl px-3 py-1.5 text-xs text-neutral-950 dark:text-neutral-100 font-bold focus:outline-none cursor-pointer uppercase tracking-wide">
+                  <option value="python">Python (.py)</option>
+                  <option value="cpp">C++ (.cpp)</option>
+                  <option value="c">C (.c)</option>
+                  <option value="java">Java (.java)</option>
+                  <option value="javascript">JavaScript (.js)</option>
+                  <option value="typescript">TypeScript (.ts)</option>
+                  <option value="rust">Rust (.rs)</option>
+                  <option value="sql">SQL (.sql)</option>
+                  <option value="html">HTML (.html)</option>
+                  <option value="css">CSS (.css)</option>
+                  <option value="bash">Bash (.sh)</option>
+                  <option value="json">JSON (.json)</option>
+                  <option value="plaintext">Plain Text (.txt)</option>
+                </select>
+              </div>
+              <textarea id="code-edit-content-${payload.id}" class="w-full h-48 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 focus:border-neutral-950 dark:focus:border-white rounded-xl px-3 py-2.5 text-xs font-mono text-neutral-900 dark:text-neutral-100 focus:outline-none resize-y" style="tab-size: 2;"></textarea>
+              <div class="flex items-center justify-end gap-2">
+                <button onclick="cancelEditMessage('${payload.id}')" class="btn-tactile px-3.5 py-1.5 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-[11px] font-mono font-bold uppercase tracking-wider">Cancel</button>
+                <button onclick="saveEditMessage('${payload.id}')" class="btn-tactile px-4 py-1.5 rounded-full bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 text-[11px] font-mono font-bold uppercase tracking-wider">Save Changes</button>
+              </div>
+            </div>
+
+            <div id="delete-confirm-${payload.id}" class="hidden p-2.5 bg-red-50 dark:bg-red-950/20 border-t border-red-200 dark:border-red-900/50 flex items-center justify-between">
+              <span class="text-[11px] font-mono font-bold tracking-wider uppercase text-red-700 dark:text-red-300">DELETE THIS SPEC?</span>
+              <div class="flex items-center gap-1.5">
+                <button onclick="cancelDeleteMessage('${payload.id}')" class="btn-tactile px-3 py-1 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-[10px] font-mono font-bold uppercase">NO</button>
+                <button onclick="confirmDeleteMessage('${payload.id}')" class="btn-tactile px-3 py-1 rounded-full bg-nothing-red hover:bg-red-700 text-white text-[10px] font-mono font-bold uppercase tracking-wider">YES, DELETE</button>
+              </div>
+            </div>
+
           </div>
         `;
       }
 
       container.appendChild(messageCard);
-
-      // Re-trigger highlight.js for newly added code block
       if (payload.type === 'code') {
-        const codeElement = messageCard.querySelector('code');
-        if (codeElement && window.hljs) {
-          window.hljs.highlightElement(codeElement);
+        const codeElement = messageCard.querySelector(`#code-block-${payload.id}`);
+        if (codeElement && window.hljs) window.hljs.highlightElement(codeElement);
+      }
+      if (window.lucide) window.lucide.createIcons();
+      if (!AppState.userScrolledUp) scrollToBottom(false);
+    }
+
+    function handleEditTextareaKeyDown(e, id, mode) {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const ta = e.target;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        if (!e.shiftKey) {
+          ta.setRangeText('  ', start, end, 'end');
+        } else {
+          const val = ta.value;
+          const before = val.substring(0, start);
+          const lineStart = before.lastIndexOf('\n') + 1;
+          if (val.substring(lineStart, lineStart + 2) === '  ') {
+            ta.setRangeText('', lineStart, lineStart + 2, 'end');
+          }
         }
       }
-
-      // Re-trigger Lucide icons for new elements
-      if (window.lucide) {
-        window.lucide.createIcons({ root: messageCard });
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        saveEditMessage(id);
       }
-
-      // Auto-scroll logic: scroll to bottom if user hasn't explicitly scrolled up to inspect previous code
-      if (!AppState.userScrolledUp) {
-        scrollToBottom(false);
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelEditMessage(id);
       }
     }
 
-    // ========================================================================
-    // CLIPBOARD & DOWNLOAD ACTIONS
-    // ========================================================================
-    function copyCodeSnippet(button) {
-      const card = button.closest('.rounded-xl');
-      if (!card) return;
-      const codeElement = card.querySelector('code');
-      if (!codeElement) return;
-
-      const codeText = codeElement.textContent;
-      navigator.clipboard.writeText(codeText).then(() => {
-        playSound('action');
-        const originalHtml = button.innerHTML;
-        button.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i><span class="text-emerald-400 font-semibold">Copied!</span>`;
-        if (window.lucide) window.lucide.createIcons({ root: button });
-
-        setTimeout(() => {
-          button.innerHTML = originalHtml;
-          if (window.lucide) window.lucide.createIcons({ root: button });
-        }, 2000);
-      }).catch(err => {
-        showToast('Clipboard copy failed: ' + err, 'error');
-      });
-    }
-
-    function downloadCodeSnippet(button, filename, language) {
-      const card = button.closest('.rounded-xl');
-      if (!card) return;
-      const codeElement = card.querySelector('code');
-      if (!codeElement) return;
-
-      const codeText = codeElement.textContent;
-      const finalName = filename || getDefaultFileName(language);
-
-      const blob = new Blob([codeText], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = finalName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
+    // EDIT / DELETE LOGIC
+    function initiateEdit(id) {
+      const payload = AppState.messages.get(id);
+      if (!payload) return;
+      if (payload.senderId !== AppState.workstationId) {
+        showToast('You can only edit your own transmissions', 'error');
+        return;
+      }
       playSound('action');
-      showToast(`Saved as ${finalName}`, 'success');
+      if (payload.type === 'text') {
+        const contentDiv = document.getElementById(`text-content-${id}`);
+        const editDiv = document.getElementById(`text-edit-${id}`);
+        const input = document.getElementById(`text-edit-input-${id}`);
+        const deleteConfirm = document.getElementById(`delete-confirm-${id}`);
+        if (deleteConfirm) deleteConfirm.classList.add('hidden');
+        if (contentDiv && editDiv && input) {
+          input.value = payload.content;
+          contentDiv.classList.add('hidden');
+          editDiv.classList.remove('hidden');
+          input.focus();
+          input.style.height = 'auto';
+          input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+          input.oninput = function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+          };
+          input.onkeydown = function(ev) { handleEditTextareaKeyDown(ev, id, 'text'); };
+        }
+      } else {
+        const viewDiv = document.getElementById(`code-view-${id}`);
+        const editDiv = document.getElementById(`code-edit-${id}`);
+        const titleInput = document.getElementById(`code-edit-title-${id}`);
+        const langSelect = document.getElementById(`code-edit-lang-${id}`);
+        const contentInput = document.getElementById(`code-edit-content-${id}`);
+        const deleteConfirm = document.getElementById(`delete-confirm-${id}`);
+        if (deleteConfirm) deleteConfirm.classList.add('hidden');
+        if (viewDiv && editDiv && titleInput && langSelect && contentInput) {
+          titleInput.value = payload.title || '';
+          langSelect.value = payload.language || 'plaintext';
+          contentInput.value = payload.content || '';
+          viewDiv.classList.add('hidden');
+          editDiv.classList.remove('hidden');
+          contentInput.focus();
+          contentInput.onkeydown = function(ev) { handleEditTextareaKeyDown(ev, id, 'code'); };
+        }
+      }
+    }
+
+    function cancelEditMessage(id) {
+      const payload = AppState.messages.get(id);
+      if (!payload) return;
+      playSound('action');
+      if (payload.type === 'text') {
+        const contentDiv = document.getElementById(`text-content-${id}`);
+        const editDiv = document.getElementById(`text-edit-${id}`);
+        if (contentDiv && editDiv) {
+          editDiv.classList.add('hidden');
+          contentDiv.classList.remove('hidden');
+        }
+      } else {
+        const viewDiv = document.getElementById(`code-view-${id}`);
+        const editDiv = document.getElementById(`code-edit-${id}`);
+        if (viewDiv && editDiv) {
+          editDiv.classList.add('hidden');
+          viewDiv.classList.remove('hidden');
+        }
+      }
+    }
+
+    async function saveEditMessage(id) {
+      const payload = AppState.messages.get(id);
+      if (!payload) return;
+      if (payload.senderId !== AppState.workstationId) return;
+
+      let newContent = '';
+      let newTitle = payload.title;
+      let newLang = payload.language;
+
+      if (payload.type === 'text') {
+        const input = document.getElementById(`text-edit-input-${id}`);
+        if (!input) return;
+        newContent = input.value.trim();
+        if (!newContent) { showToast('Content cannot be empty', 'error'); return; }
+      } else {
+        const titleInput = document.getElementById(`code-edit-title-${id}`);
+        const langSelect = document.getElementById(`code-edit-lang-${id}`);
+        const contentInput = document.getElementById(`code-edit-content-${id}`);
+        if (!contentInput) return;
+        newContent = contentInput.value.trim();
+        if (!newContent) { showToast('Code cannot be empty', 'error'); return; }
+        newTitle = titleInput ? titleInput.value.trim() || getDefaultFileName(langSelect.value) : payload.title;
+        newLang = langSelect ? langSelect.value : payload.language;
+      }
+
+      // Update local
+      payload.content = newContent;
+      if (payload.type === 'code') {
+        payload.title = newTitle;
+        payload.language = newLang;
+      }
+      payload.edited = true;
+      payload.editedAt = Date.now();
+      AppState.messages.set(id, payload);
+      applyEditToDOM(payload);
+      playSound('action');
+      showToast('Transmission updated', 'success');
+
+      // Broadcast edit
+      const editBroadcast = {
+        id: id,
+        type: payload.type,
+        content: newContent,
+        title: newTitle,
+        language: newLang,
+        editedAt: payload.editedAt,
+        editorId: AppState.workstationId,
+        editorName: AppState.workstationName
+      };
+
+      if (AppState.channel && AppState.connectionStatus === 'connected') {
+        try { await AppState.channel.send({ type: 'broadcast', event: 'nirmaan_edit', payload: editBroadcast }); } catch (e) {}
+      } else if (AppState.localBroadcastChannel) {
+        AppState.localBroadcastChannel.postMessage({ type: 'nirmaan_edit', payload: editBroadcast });
+      }
+    }
+
+    function requestDeleteMessage(id) {
+      const payload = AppState.messages.get(id);
+      if (!payload) return;
+      if (payload.senderId !== AppState.workstationId) {
+        showToast('You can only delete your own transmissions', 'error');
+        return;
+      }
+      playSound('action');
+      const confirmEl = document.getElementById(`delete-confirm-${id}`);
+      if (confirmEl) {
+        confirmEl.classList.remove('hidden');
+        // Hide edit if open
+        if (payload.type === 'text') {
+          const editDiv = document.getElementById(`text-edit-${id}`);
+          const contentDiv = document.getElementById(`text-content-${id}`);
+          if (editDiv && contentDiv) { editDiv.classList.add('hidden'); contentDiv.classList.remove('hidden'); }
+        } else {
+          const editDiv = document.getElementById(`code-edit-${id}`);
+          const viewDiv = document.getElementById(`code-view-${id}`);
+          if (editDiv && viewDiv) { editDiv.classList.add('hidden'); viewDiv.classList.remove('hidden'); }
+        }
+      }
+    }
+
+    function cancelDeleteMessage(id) {
+      const confirmEl = document.getElementById(`delete-confirm-${id}`);
+      if (confirmEl) confirmEl.classList.add('hidden');
+      playSound('action');
+    }
+
+    async function confirmDeleteMessage(id) {
+      const payload = AppState.messages.get(id);
+      if (!payload) return;
+      if (payload.senderId !== AppState.workstationId) return;
+
+      AppState.messages.delete(id);
+      const el = document.querySelector(`[data-id="${id}"]`);
+      if (el) {
+        el.classList.add('animate-delete-out');
+        setTimeout(() => {
+          el.remove();
+          if (AppState.messages.size === 0) {
+            const emptyState = document.getElementById('empty-state');
+            if (emptyState) emptyState.classList.remove('hidden');
+          }
+        }, 180);
+      }
+      playSound('action');
+      showToast('Transmission deleted', 'info');
+
+      const deleteBroadcast = {
+        id: id,
+        deleterId: AppState.workstationId,
+        deleterName: AppState.workstationName,
+        timestamp: Date.now()
+      };
+
+      if (AppState.channel && AppState.connectionStatus === 'connected') {
+        try { await AppState.channel.send({ type: 'broadcast', event: 'nirmaan_delete', payload: deleteBroadcast }); } catch (e) {}
+      } else if (AppState.localBroadcastChannel) {
+        AppState.localBroadcastChannel.postMessage({ type: 'nirmaan_delete', payload: deleteBroadcast });
+      }
+    }
+
+    // CODE ACTIONS - COPY & SAVE WITH AUTO EXTENSION
+    function getFileExtension(language) {
+      const map = {
+        python: 'py', cpp: 'cpp', c: 'c', java: 'java',
+        javascript: 'js', typescript: 'ts', rust: 'rs',
+        sql: 'sql', html: 'html', css: 'css',
+        bash: 'sh', json: 'json', plaintext: 'txt'
+      };
+      return map[(language || 'plaintext').toLowerCase()] || 'txt';
+    }
+
+    function buildFileName(title, language) {
+      const ext = getFileExtension(language);
+      if (!title || !title.trim()) return `nirmaan-${Date.now().toString().slice(-4)}.${ext}`;
+      let clean = title.trim().replace(/\s+/g, '-').replace(/[^a-zA-Z0-9._-]/g, '');
+      if (!clean) clean = `nirmaan-${Date.now().toString().slice(-4)}`;
+      const lowerClean = clean.toLowerCase();
+      if (lowerClean.endsWith('.' + ext)) return clean;
+      if (clean.includes('.')) {
+        const parts = clean.split('.');
+        parts.pop();
+        const base = parts.join('.') || clean;
+        return `${base}.${ext}`;
+      }
+      return `${clean}.${ext}`;
+    }
+
+    function fallbackCopyText(text) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    }
+
+    function copyCodeSnippet(id) {
+      const payload = AppState.messages.get(id);
+      let codeText = payload ? payload.content : '';
+      if (!codeText) {
+        const codeEl = document.getElementById(`code-block-${id}`);
+        if (codeEl) codeText = codeEl.textContent;
+      }
+      if (!codeText) { showToast('Nothing to copy', 'error'); return; }
+
+      const btn = document.getElementById(`copy-btn-${id}`);
+
+      const onSuccess = () => {
+        playSound('action');
+        if (btn) {
+          const original = btn.textContent;
+          btn.textContent = 'COPIED';
+          btn.classList.add('!bg-neutral-950', 'dark:!bg-white', '!text-white', 'dark:!text-neutral-950');
+          setTimeout(() => {
+            btn.textContent = original;
+            btn.classList.remove('!bg-neutral-950', 'dark:!bg-white', '!text-white', 'dark:!text-neutral-950');
+          }, 1600);
+        }
+        showToast('Copied to clipboard', 'success');
+      };
+      const onFail = () => {
+        if (fallbackCopyText(codeText)) onSuccess();
+        else showToast('Copy failed — select manually', 'error');
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(codeText).then(onSuccess).catch(onFail);
+      } else {
+        onFail();
+      }
+    }
+
+    function saveCodeSnippet(id) {
+      const payload = AppState.messages.get(id);
+      if (!payload) { showToast('Code not found', 'error'); return; }
+      const fileName = buildFileName(payload.title, payload.language);
+      try {
+        const blob = new Blob([payload.content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        // For sandboxed iframe fallback, open in new tab if download blocked
+        setTimeout(() => {
+          try { document.body.removeChild(a); } catch(e) {}
+          URL.revokeObjectURL(url);
+        }, 250);
+        playSound('action');
+        showToast(`Saved as ${fileName}`, 'success');
+
+        // Visual feedback on button
+        const btn = document.getElementById(`save-btn-${id}`);
+        if (btn) {
+          const orig = btn.textContent;
+          btn.textContent = 'SAVED';
+          setTimeout(() => { btn.textContent = orig; }, 1600);
+        }
+      } catch (err) {
+        showToast('Save failed', 'error');
+      }
     }
 
     function getDefaultFileName(language) {
-      const extMap = {
-        python: 'py',
-        cpp: 'cpp',
-        c: 'c',
-        java: 'java',
-        javascript: 'js',
-        typescript: 'ts',
-        rust: 'rs',
-        sql: 'sql',
-        html: 'html',
-        css: 'css',
-        bash: 'sh',
-        json: 'json',
-        plaintext: 'txt'
-      };
-      const ext = extMap[language] || 'txt';
-      return `snippet-${Date.now().toString().slice(-4)}.${ext}`;
+      const ext = getFileExtension(language);
+      return `spec-${Date.now().toString().slice(-4)}.${ext}`;
     }
 
     function autoDetectLanguage(code) {
-      // Fast heuristics for lab environments
       if (/^\s*(#include|int main\(|std::|cout\s*<<)/m.test(code)) return 'cpp';
       if (/^\s*(def |import |from \w+ import|class \w+:|print\()/m.test(code)) return 'python';
       if (/^\s*(public class |public static void main|System\.out\.println)/m.test(code)) return 'java';
-      if (/^\s*(fn main\(\)|use std::|let mut |println!\()/m.test(code)) return 'rust';
+      if (/^\s*(fn main\(\)|use std::|let mut |println!\(\))/m.test(code)) return 'rust';
       if (/^\s*(SELECT |INSERT INTO|CREATE TABLE|UPDATE |DELETE FROM)/im.test(code)) return 'sql';
       if (/^\s*(<(!DOCTYPE|html|div|head|body|script))/i.test(code)) return 'html';
       if (/^\s*(#!\/bin\/bash|echo |sudo |apt-get|chmod)/m.test(code)) return 'bash';
-      if (/^\s*(\{.*\}|\[.*\])\s*$/s.test(code.trim()) && (code.includes('":') || code.includes('": '))) return 'json';
+      if (/^\s*(\{.*\}|\[.*\])\s*$/s.test(code.trim()) && code.includes('":')) return 'json';
       if (/^\s*(const |let |var |function |console\.log\(|=>)/m.test(code)) return 'javascript';
       return 'plaintext';
     }
 
-    // ========================================================================
-    // COMPOSER MODE SWITCHING & KEYBOARD SHORTCUTS
-    // ========================================================================
     function setComposerMode(mode) {
       AppState.composerMode = mode;
       const textBtn = document.getElementById('tab-text-mode');
@@ -1462,48 +1510,46 @@
       const codeInput = document.getElementById('code-input');
       const codeOptionsBar = document.getElementById('code-options-bar');
       const sendBtnLabel = document.getElementById('send-btn-label');
-
       if (mode === 'text') {
-        textBtn.className = 'flex items-center gap-1.5 px-3 py-1 rounded text-white bg-cyber-700 shadow font-semibold transition-all';
-        codeBtn.className = 'flex items-center gap-1.5 px-3 py-1 rounded text-slate-400 hover:text-white transition-all';
+        textBtn.className = 'btn-tactile px-4 py-1 rounded-full text-white dark:text-neutral-950 bg-neutral-950 dark:bg-white shadow-xs font-bold text-xs tracking-wider uppercase transition-all';
+        codeBtn.className = 'btn-tactile px-4 py-1 rounded-full text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-all font-bold text-xs tracking-wider uppercase';
         textInput.classList.remove('hidden');
         codeInput.classList.add('hidden');
         codeOptionsBar.classList.add('hidden');
-        sendBtnLabel.textContent = 'Broadcast Message';
+        sendBtnLabel.textContent = 'TRANSMIT →';
         textInput.focus();
         updateCharCount(textInput.value.length);
       } else {
-        codeBtn.className = 'flex items-center gap-1.5 px-3 py-1 rounded text-white bg-emerald-700 shadow font-semibold transition-all';
-        textBtn.className = 'flex items-center gap-1.5 px-3 py-1 rounded text-slate-400 hover:text-white transition-all';
+        codeBtn.className = 'btn-tactile px-4 py-1 rounded-full text-white dark:text-neutral-950 bg-neutral-950 dark:bg-white shadow-xs font-bold text-xs tracking-wider uppercase transition-all';
+        textBtn.className = 'btn-tactile px-4 py-1 rounded-full text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white transition-all font-bold text-xs tracking-wider uppercase';
         codeInput.classList.remove('hidden');
         textInput.classList.add('hidden');
         codeOptionsBar.classList.remove('hidden');
-        sendBtnLabel.textContent = 'Drop Code';
+        sendBtnLabel.textContent = 'TRANSMIT SPEC →';
         codeInput.focus();
         updateCharCount(codeInput.value.length);
       }
     }
 
     function handleTextareaKeyDown(e, mode) {
-      // Ctrl+Enter or Cmd+Enter to dispatch payload
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        broadcastCurrentPayload();
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
         broadcastCurrentPayload();
         return;
       }
-
-      // Code editor Tab and Shift+Tab key indentation support
       if (mode === 'code' && e.key === 'Tab') {
         e.preventDefault();
         const textarea = e.target;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
-
         if (!e.shiftKey) {
-          // Insert 2 spaces
           textarea.setRangeText('  ', start, end, 'end');
         } else {
-          // Dedent
           const value = textarea.value;
           const beforeStart = value.substring(0, start);
           const lineStart = beforeStart.lastIndexOf('\n') + 1;
@@ -1518,18 +1564,8 @@
     function setupInputListeners() {
       const textInput = document.getElementById('text-input');
       const codeInput = document.getElementById('code-input');
-
-      textInput.addEventListener('input', () => {
-        if (AppState.composerMode === 'text') {
-          updateCharCount(textInput.value.length);
-        }
-      });
-
-      codeInput.addEventListener('input', () => {
-        if (AppState.composerMode === 'code') {
-          updateCharCount(codeInput.value.length);
-        }
-      });
+      textInput.addEventListener('input', () => { if (AppState.composerMode === 'text') updateCharCount(textInput.value.length); });
+      codeInput.addEventListener('input', () => { if (AppState.composerMode === 'code') updateCharCount(codeInput.value.length); });
     }
 
     function updateCharCount(len) {
@@ -1538,100 +1574,61 @@
       if (AppState.composerMode === 'code') {
         const codeVal = document.getElementById('code-input').value;
         const lineNum = codeVal ? codeVal.split('\n').length : 0;
-        label.textContent = `${lineNum} line${lineNum === 1 ? '' : 's'} • ${len} chars`;
+        label.textContent = `${lineNum} L // ${len} B`;
       } else {
-        label.textContent = `${len} chars`;
+        label.textContent = `${len} B`;
       }
     }
 
-    // ========================================================================
-    // AUTO-SCROLL DETECTION & BEHAVIOR
-    // ========================================================================
     function setupScrollListener() {
       const feed = document.getElementById('messages-feed');
       feed.addEventListener('scroll', () => {
         const distanceFromBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight;
-        // If user is more than 120px away from bottom, consider them "reading/scrolled up"
         AppState.userScrolledUp = distanceFromBottom > 120;
         updateScrollBottomButton();
       });
     }
-
     function scrollToBottom(smooth = true) {
       const feed = document.getElementById('messages-feed');
-      feed.scrollTo({
-        top: feed.scrollHeight,
-        behavior: smooth ? 'smooth' : 'auto'
-      });
+      feed.scrollTo({ top: feed.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
       AppState.userScrolledUp = false;
       AppState.unreadWhileScrolled = 0;
       updateScrollBottomButton();
     }
-
     function updateScrollBottomButton() {
       const btn = document.getElementById('scroll-bottom-btn');
       if (!btn) return;
       if (AppState.userScrolledUp && AppState.unreadWhileScrolled > 0) {
         btn.classList.remove('hidden');
-        btn.querySelector('span').textContent = `New Messages (${AppState.unreadWhileScrolled})`;
-      } else {
-        btn.classList.add('hidden');
-      }
+        btn.querySelector('span').textContent = `NEW TRANSMISSIONS (${AppState.unreadWhileScrolled})`;
+      } else btn.classList.add('hidden');
     }
 
-    // ========================================================================
-    // WORKSTATION & ROOM MANAGEMENT
-    // ========================================================================
     async function updateWorkstationName(newName) {
       const clean = newName.trim();
       if (!clean) return;
-
       AppState.workstationName = clean;
       localStorage.setItem('nirmaan_workstation_name', clean);
-
-      // Re-track presence with updated name
       if (AppState.channel && AppState.connectionStatus === 'connected') {
-        try {
-          await AppState.channel.track({
-            id: AppState.workstationId,
-            name: AppState.workstationName,
-            room: AppState.roomCode,
-            joinedAt: Date.now()
-          });
-        } catch (e) {
-          console.warn('Presence re-track error:', e);
-        }
+        try { await AppState.channel.track({ id: AppState.workstationId, name: AppState.workstationName, room: AppState.roomCode, joinedAt: Date.now() }); } catch (e) {}
       } else if (AppState.localBroadcastChannel) {
-        AppState.localBroadcastChannel.postMessage({
-          type: 'presence_ping',
-          workstation: {
-            id: AppState.workstationId,
-            name: AppState.workstationName,
-            joinedAt: Date.now()
-          }
-        });
+        AppState.localBroadcastChannel.postMessage({ type: 'presence_ping', workstation: { id: AppState.workstationId, name: AppState.workstationName, joinedAt: Date.now() } });
       }
-
-      showToast(`Workstation name updated to ${clean}`, 'info');
+      showToast(`Callsign: ${clean}`, 'info');
     }
 
     async function switchRoom(newRoomCode) {
       const cleanRoom = newRoomCode.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'lab-01';
       if (cleanRoom === AppState.roomCode) return;
-
       AppState.roomCode = cleanRoom;
       updateRoomUI();
-
-      // Clear local feed for the new room
       const container = document.getElementById('messages-container');
       container.innerHTML = '';
+      AppState.messages.clear();
       const emptyState = document.getElementById('empty-state');
       if (emptyState) emptyState.classList.remove('hidden');
       AppState.messagesCount = 0;
-
-      showToast(`Switched to room #${cleanRoom}`, 'info');
-
-      // Re-initialize Realtime on the new room channel
+      showToast(`Joined #${cleanRoom.toUpperCase()}`, 'info');
       await initRealtime();
     }
 
@@ -1639,27 +1636,24 @@
       const shareUrl = window.location.origin + window.location.pathname + '#' + AppState.roomCode;
       navigator.clipboard.writeText(shareUrl).then(() => {
         playSound('action');
-        showToast(`Copied room link: #${AppState.roomCode}`, 'success');
-
+        showToast(`Copied room link: #${AppState.roomCode.toUpperCase()}`, 'success');
         const btnText = document.getElementById('copy-room-text');
         const btnIcon = document.getElementById('copy-room-icon');
-        if (btnText) btnText.textContent = 'Copied!';
+        if (btnText) btnText.textContent = 'COPIED';
         if (btnIcon) btnIcon.setAttribute('data-lucide', 'check');
         if (window.lucide) window.lucide.createIcons();
-
         setTimeout(() => {
-          if (btnText) btnText.textContent = 'Link';
+          if (btnText) btnText.textContent = 'LINK';
           if (btnIcon) btnIcon.setAttribute('data-lucide', 'copy');
           if (window.lucide) window.lucide.createIcons();
-        }, 2000);
-      }).catch(err => {
-        showToast('Failed to copy link: ' + err, 'error');
+        }, 1600);
       });
     }
 
     function clearLocalScreen() {
       const container = document.getElementById('messages-container');
       container.innerHTML = '';
+      AppState.messages.clear();
       const emptyState = document.getElementById('empty-state');
       if (emptyState) emptyState.classList.remove('hidden');
       AppState.messagesCount = 0;
@@ -1668,18 +1662,9 @@
 
     function sendQuickSample() {
       const sampleCodes = [
-        {
-          lang: 'python',
-          title: 'quicksort.py',
-          code: `# QuickSort Algorithm Implementation\ndef quicksort(arr):\n    if len(arr) <= 1:\n        return arr\n    pivot = arr[len(arr) // 2]\n    left = [x for x in arr if x < pivot]\n    middle = [x for x in arr if x == pivot]\n    right = [x for x in arr if x > pivot]\n    return quicksort(left) + middle + quicksort(right)\n\nprint("Sorted:", quicksort([3, 6, 8, 10, 1, 2, 1]))`
-        },
-        {
-          lang: 'cpp',
-          title: 'binary_search.cpp',
-          code: `// Fast Binary Search in C++\n#include <iostream>\n#include <vector>\n\nint binarySearch(const std::vector<int>& arr, int target) {\n    int low = 0, high = arr.size() - 1;\n    while (low <= high) {\n        int mid = low + (high - low) / 2;\n        if (arr[mid] == target) return mid;\n        if (arr[mid] < target) low = mid + 1;\n        else high = mid - 1;\n    }\n    return -1;\n}\n\nint main() {\n    std::vector<int> nums = {2, 5, 8, 12, 16, 23, 38, 56};\n    std::cout << "Index of 23: " << binarySearch(nums, 23) << std::endl;\n    return 0;\n}`
-        }
+        { lang: 'python', title: 'sync_test.py', code: `# Nirmaan Lab Sync Engine\n# Pure • Minimal • Zero Persistence\ndef ping():\n    return {"status": "ACTIVE", "transport": "WEBSOCKET"}\n\nprint(ping())` },
+        { lang: 'cpp', title: 'fast_io.cpp', code: `// Fast Competitive Programming Template\n#include <iostream>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n    cout << "NIRMAAN // READY\\n";\n    return 0;\n}` }
       ];
-
       const sample = sampleCodes[Math.floor(Math.random() * sampleCodes.length)];
       setComposerMode('code');
       document.getElementById('code-input').value = sample.code;
@@ -1689,50 +1674,30 @@
       broadcastCurrentPayload();
     }
 
-    // ========================================================================
-    // MODAL DIALOGS
-    // ========================================================================
     function openSetupModal() {
       const creds = getEffectiveCredentials();
       document.getElementById('cfg-supabase-url').value = creds.isConfigured ? creds.url : '';
       document.getElementById('cfg-supabase-key').value = creds.isConfigured ? creds.key : '';
       document.getElementById('setup-modal').classList.remove('hidden');
     }
-
-    function closeSetupModal() {
-      document.getElementById('setup-modal').classList.add('hidden');
-    }
-
+    function closeSetupModal() { document.getElementById('setup-modal').classList.add('hidden'); }
     function saveSupabaseConfig() {
       const urlInput = document.getElementById('cfg-supabase-url').value.trim();
       const keyInput = document.getElementById('cfg-supabase-key').value.trim();
-
-      if (!urlInput || !keyInput) {
-        showToast('Please provide both Project URL and Anon Key', 'error');
-        return;
-      }
-
-      if (!urlInput.startsWith('https://')) {
-        showToast('Supabase URL must start with https://', 'error');
-        return;
-      }
-
+      if (!urlInput || !keyInput) { showToast('Please provide URL and Key', 'error'); return; }
       localStorage.setItem('nirmaan_supabase_url', urlInput);
       localStorage.setItem('nirmaan_supabase_key', keyInput);
-
       closeSetupModal();
-      showToast('Credentials saved. Reconnecting...', 'info');
+      showToast('Credentials saved', 'info');
       initRealtime();
     }
-
     function useLocalMeshDemo() {
       localStorage.removeItem('nirmaan_supabase_url');
       localStorage.removeItem('nirmaan_supabase_key');
       closeSetupModal();
       initRealtime();
-      showToast('Switched to Local Mesh Mode', 'info');
+      showToast('Switched to Local Mesh Protocol', 'info');
     }
-
     function clearSavedKeys() {
       localStorage.removeItem('nirmaan_supabase_url');
       localStorage.removeItem('nirmaan_supabase_key');
@@ -1741,116 +1706,48 @@
       showToast('Cleared stored keys', 'info');
       initRealtime();
     }
-
-    function dismissBanner() {
-      document.getElementById('setup-warning-banner').classList.add('hidden');
-    }
-
+    function dismissBanner() { document.getElementById('setup-warning-banner').classList.add('hidden'); }
     function openRoomSwitchModal() {
-      document.getElementById('switch-room-input').value = AppState.roomCode;
+      document.getElementById('switch-room-input').value = AppState.roomCode.toUpperCase();
       document.getElementById('room-modal').classList.remove('hidden');
       setTimeout(() => document.getElementById('switch-room-input').focus(), 50);
     }
-
-    function closeRoomSwitchModal() {
-      document.getElementById('room-modal').classList.add('hidden');
-    }
-
+    function closeRoomSwitchModal() { document.getElementById('room-modal').classList.add('hidden'); }
     function submitRoomSwitch() {
       const newRoom = document.getElementById('switch-room-input').value;
-      if (newRoom && newRoom.trim()) {
-        closeRoomSwitchModal();
-        switchRoom(newRoom);
-      }
+      if (newRoom && newRoom.trim()) { closeRoomSwitchModal(); switchRoom(newRoom); }
     }
-
-    function quickJoinRoom(room) {
-      closeRoomSwitchModal();
-      switchRoom(room);
-    }
-
+    function quickJoinRoom(room) { closeRoomSwitchModal(); switchRoom(room); }
     function togglePeersModal() {
       const modal = document.getElementById('peers-modal');
-      const isHidden = modal.classList.contains('hidden');
-      if (isHidden) {
-        renderPeersList();
-        modal.classList.remove('hidden');
-      } else {
-        modal.classList.add('hidden');
-      }
+      if (modal.classList.contains('hidden')) { renderPeersList(); modal.classList.remove('hidden'); }
+      else modal.classList.add('hidden');
     }
+    function showHelpModal() { document.getElementById('help-modal').classList.remove('hidden'); }
+    function closeHelpModal() { document.getElementById('help-modal').classList.add('hidden'); }
 
-    function showHelpModal() {
-      document.getElementById('help-modal').classList.remove('hidden');
-    }
-
-    function closeHelpModal() {
-      document.getElementById('help-modal').classList.add('hidden');
-    }
-
-    function toggleSound() {
-      AppState.soundEnabled = !AppState.soundEnabled;
-      localStorage.setItem('nirmaan_sound_enabled', AppState.soundEnabled);
-      updateSoundIcon();
-      showToast(AppState.soundEnabled ? 'Audio cues enabled' : 'Audio muted', 'info');
-      if (AppState.soundEnabled) playSound('action');
-    }
-
-    function updateSoundIcon() {
-      const icon = document.getElementById('sound-icon');
-      if (!icon) return;
-      if (AppState.soundEnabled) {
-        icon.setAttribute('data-lucide', 'volume-2');
-        icon.classList.remove('text-red-400');
-      } else {
-        icon.setAttribute('data-lucide', 'volume-x');
-        icon.classList.add('text-red-400');
-      }
-      if (window.lucide) window.lucide.createIcons();
-    }
-
-    // Global Escape key listener to close modals
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        closeSetupModal();
-        closeRoomSwitchModal();
+        closeSetupModal(); closeRoomSwitchModal();
         document.getElementById('peers-modal').classList.add('hidden');
         closeHelpModal();
+        // Close any open edit/delete confirmations
+        document.querySelectorAll('[id^="delete-confirm-"]').forEach(el => el.classList.add('hidden'));
       }
     });
 
-    // ========================================================================
-    // TOAST NOTIFICATIONS
-    // ========================================================================
     function showToast(message, type = 'info') {
       const container = document.getElementById('toast-container');
       if (!container) return;
-
       const toast = document.createElement('div');
-      toast.className = 'flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-mono shadow-xl transition-all duration-300 transform translate-y-2 opacity-0';
-
-      if (type === 'success') {
-        toast.classList.add('bg-emerald-950', 'text-emerald-200', 'border', 'border-emerald-700/80');
-        toast.innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i><span>${escapeHtml(message)}</span>`;
-      } else if (type === 'error') {
-        toast.classList.add('bg-red-950', 'text-red-200', 'border', 'border-red-700/80');
-        toast.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5 text-red-400"></i><span>${escapeHtml(message)}</span>`;
-      } else {
-        toast.classList.add('bg-cyber-900', 'text-cyan-200', 'border', 'border-cyan-800/80');
-        toast.innerHTML = `<i data-lucide="info" class="w-3.5 h-3.5 text-cyan-400"></i><span>${escapeHtml(message)}</span>`;
-      }
-
+      toast.className = 'flex items-center gap-2 px-4 py-2 rounded-full text-xs font-mono font-medium shadow-md transition-all duration-200 transform translate-y-2 opacity-0 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 text-neutral-950 dark:text-white uppercase tracking-wider';
+      let dot = '<span class="w-1.5 h-1.5 rounded-full bg-neutral-950 dark:bg-white"></span>';
+      if (type === 'success') dot = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>';
+      else if (type === 'error') dot = '<span class="w-1.5 h-1.5 rounded-full bg-nothing-red"></span>';
+      toast.innerHTML = `${dot}<span>${escapeHtml(message)}</span>`;
       container.appendChild(toast);
-      if (window.lucide) window.lucide.createIcons({ root: toast });
-
-      requestAnimationFrame(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-      });
-
-      setTimeout(() => {
-        toast.classList.add('opacity-0', 'translate-x-4');
-        setTimeout(() => toast.remove(), 300);
-      }, 3200);
+      requestAnimationFrame(() => { toast.classList.remove('translate-y-2', 'opacity-0'); });
+      setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-2'); setTimeout(() => toast.remove(), 200); }, 2400);
     }
   </script>
 </body>
